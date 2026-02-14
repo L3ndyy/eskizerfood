@@ -17,27 +17,28 @@ export async function getRestaurants(opts?: {
     },
   });
 
-  let filtered = restaurants;
+  type RestaurantRow = (typeof restaurants)[number];
+  let filtered: RestaurantRow[] = restaurants;
   if (opts?.search) {
     const q = opts.search.toLowerCase();
     filtered = filtered.filter(
-      (r) =>
+      (r: RestaurantRow) =>
         r.name.toLowerCase().includes(q) ||
         r.cuisineTypes?.toLowerCase().includes(q)
     );
   }
   if (opts?.cuisine) {
-    filtered = filtered.filter((r) =>
+    filtered = filtered.filter((r: RestaurantRow) =>
       r.cuisineTypes?.toLowerCase().includes(opts!.cuisine!.toLowerCase())
     );
   }
   if (opts?.sort === 'deliveryTime') {
-    filtered = [...filtered].sort((a, b) => a.deliveryTime - b.deliveryTime);
+    filtered = [...filtered].sort((a: RestaurantRow, b: RestaurantRow) => a.deliveryTime - b.deliveryTime);
   } else if (opts?.sort === 'minOrder') {
-    filtered = [...filtered].sort((a, b) => a.minOrder - b.minOrder);
+    filtered = [...filtered].sort((a: RestaurantRow, b: RestaurantRow) => a.minOrder - b.minOrder);
   }
 
-  return filtered.map((r) => ({
+  return filtered.map((r: RestaurantRow) => ({
     ...r,
     cuisineTypes: ((): string[] => {
       try {
