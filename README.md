@@ -63,7 +63,7 @@ npx prisma studio
      - Имя: `NEXTAUTH_URL`, значение: пока можно оставить пустым или `https://твой-сервис.up.railway.app` (подставишь точный URL после деплоя).
 5. **Start Command и Prisma (pre-deploy):**
    - В том же сервисе открой вкладку **Settings** → в правой колонке выбери **Deploy**.
-   - В блоке **Deploy** нажми **+ Start Command** и укажи: `npm run start`.
+   - В блоке **Deploy** нажми **+ Start Command** и укажи: `npx next start` (так контейнер запускает процесс напрямую, без ошибки pid1).
    - Ниже нажми **+ Add pre-deploy step** — туда добавь команду, которая выполнится перед каждым запуском (миграции Prisma):
      - Команда: `npx prisma generate && npx prisma db push`
    - Отдельного поля «Build Command» в Railway нет: сборка (`npm run build`) выполняется автоматически для Next.js. Pre-deploy step как раз нужен, чтобы перед стартом приложения применить схему БД.
