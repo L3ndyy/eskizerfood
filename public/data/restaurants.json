@@ -1,0 +1,737 @@
+[
+  {
+    "id": "static-dodo-pizza",
+    "name": "Додо Пицца",
+    "slug": "dodo-pizza",
+    "description": "Идеальная пицца с фирменным томатным соусом и моцареллой. Доставка за 30 минут.",
+    "image": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400",
+    "coverImage": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800",
+    "rating": 4.8,
+    "reviewCount": 1250,
+    "deliveryTime": 30,
+    "minOrder": 500,
+    "deliveryFee": 99,
+    "cuisineTypes": [
+      "Пицца",
+      "Итальянская"
+    ],
+    "address": "ул. Пушкина, 15",
+    "isActive": true,
+    "createdAt": "2026-02-14T11:39:44.218Z",
+    "updatedAt": "2026-02-14T11:39:44.218Z",
+    "dishes": [
+      {
+        "id": "static-dodo-pizza-pepperoni",
+        "name": "Пепперони",
+        "slug": "pepperoni",
+        "description": "Пикантная салями, моцарелла, томатный соус",
+        "price": 449,
+        "weight": "450 г",
+        "image": null,
+        "categoryId": "cat-pizza",
+        "isAvailable": true,
+        "sortOrder": 1,
+        "category": {
+          "id": "cat-pizza",
+          "name": "Пицца",
+          "slug": "pizza",
+          "image": null,
+          "sortOrder": 1
+        }
+      },
+      {
+        "id": "static-dodo-pizza-margherita",
+        "name": "Маргарита",
+        "slug": "margherita",
+        "description": "Классика: томаты, моцарелла, базилик",
+        "price": 399,
+        "weight": "400 г",
+        "image": null,
+        "categoryId": "cat-pizza",
+        "isAvailable": true,
+        "sortOrder": 2,
+        "category": {
+          "id": "cat-pizza",
+          "name": "Пицца",
+          "slug": "pizza",
+          "image": null,
+          "sortOrder": 2
+        }
+      },
+      {
+        "id": "static-dodo-pizza-four-cheese",
+        "name": "Четыре сыра",
+        "slug": "four-cheese",
+        "description": "Моцарелла, пармезан, горгонзола, дор блю",
+        "price": 549,
+        "weight": "450 г",
+        "image": null,
+        "categoryId": "cat-pizza",
+        "isAvailable": true,
+        "sortOrder": 3,
+        "category": {
+          "id": "cat-pizza",
+          "name": "Пицца",
+          "slug": "pizza",
+          "image": null,
+          "sortOrder": 3
+        }
+      },
+      {
+        "id": "static-dodo-pizza-cola",
+        "name": "Кола",
+        "slug": "cola",
+        "description": "Coca-Cola 0.5 л",
+        "price": 99,
+        "weight": "500 мл",
+        "image": null,
+        "categoryId": "cat-drinks",
+        "isAvailable": true,
+        "sortOrder": 4,
+        "category": {
+          "id": "cat-drinks",
+          "name": "Напитки",
+          "slug": "drinks",
+          "image": null,
+          "sortOrder": 4
+        }
+      }
+    ]
+  },
+  {
+    "id": "static-tanuki",
+    "name": "Тануки",
+    "slug": "tanuki",
+    "description": "Японская кухня: суши, роллы, сашими. Свежие ингредиенты каждый день.",
+    "image": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400",
+    "coverImage": "https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=800",
+    "rating": 4.7,
+    "reviewCount": 890,
+    "deliveryTime": 45,
+    "minOrder": 600,
+    "deliveryFee": 149,
+    "cuisineTypes": [
+      "Суши",
+      "Японская"
+    ],
+    "address": "пр. Мира, 42",
+    "isActive": true,
+    "createdAt": "2026-02-14T11:39:44.218Z",
+    "updatedAt": "2026-02-14T11:39:44.218Z",
+    "dishes": [
+      {
+        "id": "static-tanuki-philadelphia",
+        "name": "Филадельфия",
+        "slug": "philadelphia",
+        "description": "Лосось, сливочный сыр, огурец",
+        "price": 449,
+        "weight": "250 г",
+        "image": null,
+        "categoryId": "cat-sushi",
+        "isAvailable": true,
+        "sortOrder": 1,
+        "category": {
+          "id": "cat-sushi",
+          "name": "Суши и роллы",
+          "slug": "sushi",
+          "image": null,
+          "sortOrder": 1
+        }
+      },
+      {
+        "id": "static-tanuki-california",
+        "name": "Калифорния",
+        "slug": "california",
+        "description": "Краб, авокадо, огурец, икра",
+        "price": 399,
+        "weight": "230 г",
+        "image": null,
+        "categoryId": "cat-sushi",
+        "isAvailable": true,
+        "sortOrder": 2,
+        "category": {
+          "id": "cat-sushi",
+          "name": "Суши и роллы",
+          "slug": "sushi",
+          "image": null,
+          "sortOrder": 2
+        }
+      },
+      {
+        "id": "static-tanuki-dragon",
+        "name": "Дракон",
+        "slug": "dragon",
+        "description": "Угорь, огурец, соус унаги",
+        "price": 549,
+        "weight": "260 г",
+        "image": null,
+        "categoryId": "cat-sushi",
+        "isAvailable": true,
+        "sortOrder": 3,
+        "category": {
+          "id": "cat-sushi",
+          "name": "Суши и роллы",
+          "slug": "sushi",
+          "image": null,
+          "sortOrder": 3
+        }
+      },
+      {
+        "id": "static-tanuki-green-tea",
+        "name": "Зелёный чай",
+        "slug": "green-tea",
+        "description": "Японский зелёный чай",
+        "price": 99,
+        "weight": "300 мл",
+        "image": null,
+        "categoryId": "cat-drinks",
+        "isAvailable": true,
+        "sortOrder": 4,
+        "category": {
+          "id": "cat-drinks",
+          "name": "Напитки",
+          "slug": "drinks",
+          "image": null,
+          "sortOrder": 4
+        }
+      }
+    ]
+  },
+  {
+    "id": "static-burger-king",
+    "name": "Burger King",
+    "slug": "burger-king",
+    "description": "Легендарные бургеры на огне. Whopper и не только.",
+    "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
+    "coverImage": "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=800",
+    "rating": 4.5,
+    "reviewCount": 2100,
+    "deliveryTime": 25,
+    "minOrder": 400,
+    "deliveryFee": 79,
+    "cuisineTypes": [
+      "Бургеры",
+      "Фастфуд"
+    ],
+    "address": "ул. Ленина, 8",
+    "isActive": true,
+    "createdAt": "2026-02-14T11:39:44.218Z",
+    "updatedAt": "2026-02-14T11:39:44.218Z",
+    "dishes": [
+      {
+        "id": "static-burger-king-whopper",
+        "name": "Whopper",
+        "slug": "whopper",
+        "description": "Королевский бургер с говядиной",
+        "price": 299,
+        "weight": "290 г",
+        "image": null,
+        "categoryId": "cat-burgers",
+        "isAvailable": true,
+        "sortOrder": 1,
+        "category": {
+          "id": "cat-burgers",
+          "name": "Бургеры",
+          "slug": "burgers",
+          "image": null,
+          "sortOrder": 1
+        }
+      },
+      {
+        "id": "static-burger-king-cheeseburger",
+        "name": "Чизбургер",
+        "slug": "cheeseburger",
+        "description": "Классика с сыром",
+        "price": 149,
+        "weight": "150 г",
+        "image": null,
+        "categoryId": "cat-burgers",
+        "isAvailable": true,
+        "sortOrder": 2,
+        "category": {
+          "id": "cat-burgers",
+          "name": "Бургеры",
+          "slug": "burgers",
+          "image": null,
+          "sortOrder": 2
+        }
+      },
+      {
+        "id": "static-burger-king-fries",
+        "name": "Картофель фри",
+        "slug": "fries",
+        "description": "Хрустящий картофель фри",
+        "price": 129,
+        "weight": "120 г",
+        "image": null,
+        "categoryId": "cat-snacks",
+        "isAvailable": true,
+        "sortOrder": 3,
+        "category": {
+          "id": "cat-snacks",
+          "name": "Закуски",
+          "slug": "snacks",
+          "image": null,
+          "sortOrder": 3
+        }
+      },
+      {
+        "id": "static-burger-king-cola-bk",
+        "name": "Кола",
+        "slug": "cola-bk",
+        "description": "Coca-Cola 0.5 л",
+        "price": 99,
+        "weight": "500 мл",
+        "image": null,
+        "categoryId": "cat-drinks",
+        "isAvailable": true,
+        "sortOrder": 4,
+        "category": {
+          "id": "cat-drinks",
+          "name": "Напитки",
+          "slug": "drinks",
+          "image": null,
+          "sortOrder": 4
+        }
+      }
+    ]
+  },
+  {
+    "id": "static-pasta-pasta",
+    "name": "Паста Паста",
+    "slug": "pasta-pasta",
+    "description": "Итальянская кухня: паста, ризотто, лазанья. Домашние рецепты.",
+    "image": "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400",
+    "coverImage": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=800",
+    "rating": 4.8,
+    "reviewCount": 534,
+    "deliveryTime": 35,
+    "minOrder": 600,
+    "deliveryFee": 99,
+    "cuisineTypes": [
+      "Итальянская",
+      "Паста"
+    ],
+    "address": "ул. Итальянская, 7",
+    "isActive": true,
+    "createdAt": "2026-02-14T11:39:44.218Z",
+    "updatedAt": "2026-02-14T11:39:44.218Z",
+    "dishes": [
+      {
+        "id": "static-pasta-pasta-carbonara",
+        "name": "Карбонара",
+        "slug": "carbonara",
+        "description": "Спагетти, бекон, яйцо, пармезан",
+        "price": 449,
+        "weight": "350 г",
+        "image": null,
+        "categoryId": "cat-pasta",
+        "isAvailable": true,
+        "sortOrder": 1,
+        "category": {
+          "id": "cat-pasta",
+          "name": "Паста",
+          "slug": "pasta",
+          "image": null,
+          "sortOrder": 1
+        }
+      },
+      {
+        "id": "static-pasta-pasta-bolognese",
+        "name": "Болоньезе",
+        "slug": "bolognese",
+        "description": "Спагетти с мясным соусом",
+        "price": 399,
+        "weight": "350 г",
+        "image": null,
+        "categoryId": "cat-pasta",
+        "isAvailable": true,
+        "sortOrder": 2,
+        "category": {
+          "id": "cat-pasta",
+          "name": "Паста",
+          "slug": "pasta",
+          "image": null,
+          "sortOrder": 2
+        }
+      },
+      {
+        "id": "static-pasta-pasta-tiramisu",
+        "name": "Тирамису",
+        "slug": "tiramisu",
+        "description": "Классический итальянский десерт",
+        "price": 299,
+        "weight": "150 г",
+        "image": null,
+        "categoryId": "cat-desserts",
+        "isAvailable": true,
+        "sortOrder": 3,
+        "category": {
+          "id": "cat-desserts",
+          "name": "Десерты",
+          "slug": "desserts",
+          "image": null,
+          "sortOrder": 3
+        }
+      },
+      {
+        "id": "static-pasta-pasta-limonade",
+        "name": "Лимонад",
+        "slug": "limonade",
+        "description": "Домашний лимонад",
+        "price": 149,
+        "weight": "400 мл",
+        "image": null,
+        "categoryId": "cat-drinks",
+        "isAvailable": true,
+        "sortOrder": 4,
+        "category": {
+          "id": "cat-drinks",
+          "name": "Напитки",
+          "slug": "drinks",
+          "image": null,
+          "sortOrder": 4
+        }
+      }
+    ]
+  },
+  {
+    "id": "static-sweet-dreams",
+    "name": "Sweet Dreams",
+    "slug": "sweet-dreams",
+    "description": "Десерты, торты и кофе. Сладкое настроение каждый день.",
+    "image": "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400",
+    "coverImage": "https://images.unsplash.com/photo-1464305795204-6f5bbfc7fb81?w=800",
+    "rating": 4.9,
+    "reviewCount": 623,
+    "deliveryTime": 30,
+    "minOrder": 400,
+    "deliveryFee": 99,
+    "cuisineTypes": [
+      "Десерты",
+      "Кофейня"
+    ],
+    "address": "ул. Сладкая, 9",
+    "isActive": true,
+    "createdAt": "2026-02-14T11:39:44.218Z",
+    "updatedAt": "2026-02-14T11:39:44.218Z",
+    "dishes": [
+      {
+        "id": "static-sweet-dreams-napoleon",
+        "name": "Торт Наполеон",
+        "slug": "napoleon",
+        "description": "Классический слоёный торт",
+        "price": 199,
+        "weight": "120 г",
+        "image": null,
+        "categoryId": "cat-desserts",
+        "isAvailable": true,
+        "sortOrder": 1,
+        "category": {
+          "id": "cat-desserts",
+          "name": "Десерты",
+          "slug": "desserts",
+          "image": null,
+          "sortOrder": 1
+        }
+      },
+      {
+        "id": "static-sweet-dreams-ny-cheesecake",
+        "name": "Чизкейк Нью-Йорк",
+        "slug": "ny-cheesecake",
+        "description": "Нежный сливочный чизкейк",
+        "price": 249,
+        "weight": "140 г",
+        "image": null,
+        "categoryId": "cat-desserts",
+        "isAvailable": true,
+        "sortOrder": 2,
+        "category": {
+          "id": "cat-desserts",
+          "name": "Десерты",
+          "slug": "desserts",
+          "image": null,
+          "sortOrder": 2
+        }
+      },
+      {
+        "id": "static-sweet-dreams-cappuccino",
+        "name": "Капучино",
+        "slug": "cappuccino",
+        "description": "Классический капучино",
+        "price": 199,
+        "weight": "250 мл",
+        "image": null,
+        "categoryId": "cat-drinks",
+        "isAvailable": true,
+        "sortOrder": 3,
+        "category": {
+          "id": "cat-drinks",
+          "name": "Напитки",
+          "slug": "drinks",
+          "image": null,
+          "sortOrder": 3
+        }
+      },
+      {
+        "id": "static-sweet-dreams-latte",
+        "name": "Латте",
+        "slug": "latte",
+        "description": "Кофе с молоком",
+        "price": 219,
+        "weight": "300 мл",
+        "image": null,
+        "categoryId": "cat-drinks",
+        "isAvailable": true,
+        "sortOrder": 4,
+        "category": {
+          "id": "cat-drinks",
+          "name": "Напитки",
+          "slug": "drinks",
+          "image": null,
+          "sortOrder": 4
+        }
+      }
+    ]
+  },
+  {
+    "id": "static-sushiwok",
+    "name": "Сушивелл",
+    "slug": "sushiwok",
+    "description": "Суши и роллы на любой вкус. Большие порции, доступные цены.",
+    "image": "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=400",
+    "coverImage": "https://images.unsplash.com/photo-1553621042-f6e147245754?w=800",
+    "rating": 4.6,
+    "reviewCount": 756,
+    "deliveryTime": 40,
+    "minOrder": 500,
+    "deliveryFee": 129,
+    "cuisineTypes": [
+      "Суши",
+      "Японская"
+    ],
+    "address": "ул. Гагарина, 22",
+    "isActive": true,
+    "createdAt": "2026-02-14T11:39:44.218Z",
+    "updatedAt": "2026-02-14T11:39:44.218Z",
+    "dishes": [
+      {
+        "id": "static-sushiwok-shrimp-tempura",
+        "name": "Ролл Креветка темпура",
+        "slug": "shrimp-tempura",
+        "description": "Хрустящие креветки в темпуре",
+        "price": 399,
+        "weight": "240 г",
+        "image": null,
+        "categoryId": "cat-sushi",
+        "isAvailable": true,
+        "sortOrder": 1,
+        "category": {
+          "id": "cat-sushi",
+          "name": "Суши и роллы",
+          "slug": "sushi",
+          "image": null,
+          "sortOrder": 1
+        }
+      },
+      {
+        "id": "static-sushiwok-set-sunset",
+        "name": "Сет Закат",
+        "slug": "set-sunset",
+        "description": "Филадельфия, Калифорния, Лосось",
+        "price": 999,
+        "weight": "400 г",
+        "image": null,
+        "categoryId": "cat-sushi",
+        "isAvailable": true,
+        "sortOrder": 2,
+        "category": {
+          "id": "cat-sushi",
+          "name": "Суши и роллы",
+          "slug": "sushi",
+          "image": null,
+          "sortOrder": 2
+        }
+      },
+      {
+        "id": "static-sushiwok-ramen",
+        "name": "Рамен",
+        "slug": "ramen",
+        "description": "Японский лапшачный суп",
+        "price": 349,
+        "weight": "450 г",
+        "image": null,
+        "categoryId": "cat-snacks",
+        "isAvailable": true,
+        "sortOrder": 3,
+        "category": {
+          "id": "cat-snacks",
+          "name": "Закуски",
+          "slug": "snacks",
+          "image": null,
+          "sortOrder": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "static-pizza-hut",
+    "name": "Пицца Хат",
+    "slug": "pizza-hut",
+    "description": "Толстое тесто, сочные начинки. Американская пицца с душой.",
+    "image": "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400",
+    "coverImage": "https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=800",
+    "rating": 4.5,
+    "reviewCount": 987,
+    "deliveryTime": 35,
+    "minOrder": 550,
+    "deliveryFee": 119,
+    "cuisineTypes": [
+      "Пицца",
+      "Американская"
+    ],
+    "address": "пр. Победы, 55",
+    "isActive": true,
+    "createdAt": "2026-02-14T11:39:44.218Z",
+    "updatedAt": "2026-02-14T11:39:44.218Z",
+    "dishes": [
+      {
+        "id": "static-pizza-hut-supreme",
+        "name": "Суприм",
+        "slug": "supreme",
+        "description": "Пепперони, болгарский перец, лук, грибы",
+        "price": 549,
+        "weight": "500 г",
+        "image": null,
+        "categoryId": "cat-pizza",
+        "isAvailable": true,
+        "sortOrder": 1,
+        "category": {
+          "id": "cat-pizza",
+          "name": "Пицца",
+          "slug": "pizza",
+          "image": null,
+          "sortOrder": 1
+        }
+      },
+      {
+        "id": "static-pizza-hut-bbq-chicken",
+        "name": "BBQ Chicken",
+        "slug": "bbq-chicken",
+        "description": "Курица в соусе BBQ, красный лук",
+        "price": 549,
+        "weight": "480 г",
+        "image": null,
+        "categoryId": "cat-pizza",
+        "isAvailable": true,
+        "sortOrder": 2,
+        "category": {
+          "id": "cat-pizza",
+          "name": "Пицца",
+          "slug": "pizza",
+          "image": null,
+          "sortOrder": 2
+        }
+      },
+      {
+        "id": "static-pizza-hut-garlic-bread",
+        "name": "Чесночные гренки",
+        "slug": "garlic-bread",
+        "description": "Хрустящий хлеб с чесноком",
+        "price": 199,
+        "weight": "180 г",
+        "image": null,
+        "categoryId": "cat-snacks",
+        "isAvailable": true,
+        "sortOrder": 3,
+        "category": {
+          "id": "cat-snacks",
+          "name": "Закуски",
+          "slug": "snacks",
+          "image": null,
+          "sortOrder": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "static-vkusno-tochka",
+    "name": "Вкусно — и точка",
+    "slug": "vkusno-tochka",
+    "description": "Бургеры, картофель фри и напитки. Просто и вкусно.",
+    "image": "https://images.unsplash.com/photo-1550547660-d9450f859349?w=400",
+    "coverImage": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=800",
+    "rating": 4.3,
+    "reviewCount": 3241,
+    "deliveryTime": 20,
+    "minOrder": 350,
+    "deliveryFee": 69,
+    "cuisineTypes": [
+      "Бургеры",
+      "Фастфуд"
+    ],
+    "address": "ул. Советская, 12",
+    "isActive": true,
+    "createdAt": "2026-02-14T11:39:44.218Z",
+    "updatedAt": "2026-02-14T11:39:44.218Z",
+    "dishes": [
+      {
+        "id": "static-vkusno-tochka-big-hit",
+        "name": "Биг Хит",
+        "slug": "big-hit",
+        "description": "Двойная котлета, сыр, салат",
+        "price": 249,
+        "weight": "280 г",
+        "image": null,
+        "categoryId": "cat-burgers",
+        "isAvailable": true,
+        "sortOrder": 1,
+        "category": {
+          "id": "cat-burgers",
+          "name": "Бургеры",
+          "slug": "burgers",
+          "image": null,
+          "sortOrder": 1
+        }
+      },
+      {
+        "id": "static-vkusno-tochka-cheeseburger-deluxe",
+        "name": "Чизбургер делюкс",
+        "slug": "cheeseburger-deluxe",
+        "description": "Котлета, два сыра, маринованные огурцы",
+        "price": 199,
+        "weight": "220 г",
+        "image": null,
+        "categoryId": "cat-burgers",
+        "isAvailable": true,
+        "sortOrder": 2,
+        "category": {
+          "id": "cat-burgers",
+          "name": "Бургеры",
+          "slug": "burgers",
+          "image": null,
+          "sortOrder": 2
+        }
+      },
+      {
+        "id": "static-vkusno-tochka-coffee",
+        "name": "Кофе",
+        "slug": "coffee",
+        "description": "Американо или капучино",
+        "price": 149,
+        "weight": "300 мл",
+        "image": null,
+        "categoryId": "cat-drinks",
+        "isAvailable": true,
+        "sortOrder": 3,
+        "category": {
+          "id": "cat-drinks",
+          "name": "Напитки",
+          "slug": "drinks",
+          "image": null,
+          "sortOrder": 3
+        }
+      }
+    ]
+  }
+]
