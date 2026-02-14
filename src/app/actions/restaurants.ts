@@ -104,5 +104,5 @@ export async function getDishesByIds(dishIds: string[]): Promise<DishWithRestaur
     },
   });
   const order = new Map(dishIds.map((id, i) => [id, i]));
-  return dishes.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  return dishes.sort((a: DishWithRestaurant, b: DishWithRestaurant) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 }
