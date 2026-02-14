@@ -1,7 +1,15 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
 const url = process.env.DATABASE_URL || 'file:./dev.db';
-const adapter = new PrismaBetterSqlite3({ url });
+const isPostgres = url.startsWith('postgres');
 
-export const prisma = new PrismaClient({ adapter });
+function createPrismaClient() {
+  if (isPostgres) {
+    return new PrismaClient();
+  }
+  // SQLite (локальная разработка)
+  const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+  return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) });
+}
+
+export const prisma = createPrismaClient();

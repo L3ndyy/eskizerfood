@@ -49,63 +49,37 @@ npx prisma studio
 
 Откройте [http://localhost:3000](http://localhost:3000)
 
-## Деплой (GitHub + Render, бесплатно)
+## Деплой
 
-Бесплатный хостинг на **[Render](https://render.com)** — подключаете репозиторий с GitHub, настраиваете один раз, дальше каждый `git push` автоматически пересобирает и поднимает сайт.
+**Только на GitHub сайт не запустится** — GitHub Pages умеет только статику, а здесь Next.js с сервером, БД и входом. Нужен хостинг с Node.js. Самый простой вариант — **Railway**: репо с GitHub подключаешь, жмёшь пару кнопок, всё поднимается.
 
-### 1. Запушить проект в GitHub
+### Вариант: Railway (быстро и бесплатно)
 
-Если репозиторий ещё не создан или нужно обновить код:
+1. Зайди на [railway.app](https://railway.app), войди через **GitHub**.
+2. **New Project** → **Deploy from GitHub repo** → выбери репозиторий **eskizerfood** (или свой).
+3. В проекте нажми **+ New** → **Database** → **PostgreSQL**. Railway создаст БД и подставит `DATABASE_URL` в переменные.
+4. Открой свой **Service** (приложение), вкладка **Variables**. Добавь вручную:
+   - `NEXTAUTH_SECRET` — любая длинная случайная строка.
+   - `NEXTAUTH_URL` — пока пусто; после первого деплоя вставь сюда URL вида `https://твой-сервис.up.railway.app`.
+5. В **Settings** сервиса проверь:
+   - **Build Command:** `npx prisma generate && npx prisma db push && npm run build`
+   - **Start Command:** `npm run start`
+6. **Deploy** (или пуш в GitHub — деплой запустится сам).
 
-```bash
-git add .
-git commit -m "Deploy"
-git push -u origin main
+После деплоя открой URL сервиса, скопируй его в `NEXTAUTH_URL` и перезапусти. Чтобы заполнить БД тестовыми ресторанами: в **Settings** → **One-off command** (или через CLI) выполни `npx prisma db seed`.
+
+**Важно:** для Railway в `prisma/schema.prisma` в блоке `datasource db` должно быть:
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 ```
+(Локально для SQLite потом можно вернуть `provider = "sqlite"` без `url`.)
 
-(Если репо новый: `git init` → `git add .` → `git commit -m "Initial commit"` → `git branch -M main` → `git remote add origin https://github.com/ВАШ_ЛОГИН/eskizerfood.git` → `git push -u origin main`.)
+### Команды для GitHub (код уже в репо)
 
-### 2. База данных на Render
-
-1. Зайдите на [render.com](https://render.com), войдите через GitHub.
-2. **Dashboard** → **New +** → **PostgreSQL**.
-3. Имя любое (например `eskizerfood-db`), регион выберите ближайший.
-4. **Create Database**. Дождитесь создания, откройте сервис и скопируйте **Internal Database URL** (или **External** — оба подойдут).
-
-### 3. Сайт (Web Service) на Render
-
-1. **New +** → **Web Service**.
-2. Подключите репозиторий **eskizerfood** (или свой). Branch: `main`.
-3. Настройки:
-   - **Name:** `eskizerfood` (или любое).
-   - **Runtime:** Node.
-   - **Build Command:**  
-     `npm install && npx prisma generate && npx prisma db push && npm run build`
-   - **Start Command:**  
-     `npm run start`
-4. **Advanced** → **Add Environment Variable**, добавьте:
-
-   | Key | Value |
-   |-----|--------|
-   | `DATABASE_URL` | вставьте скопированный URL из шага 2 (PostgreSQL) |
-   | `NEXTAUTH_SECRET` | любая длинная случайная строка (например сгенерируйте: `openssl rand -base64 32`) |
-   | `NEXTAUTH_URL` | пока оставьте пустым или `https://ваш-сервис.onrender.com` — после первого деплоя замените на реальный URL сервиса |
-
-5. **Create Web Service**. Дождитесь первого деплоя.
-
-### 4. После первого деплоя
-
-1. В карточке сервиса скопируйте **URL** (например `https://eskizerfood.onrender.com`).
-2. В **Environment** добавьте или измените `NEXTAUTH_URL` на этот URL. Сохраните — Render перезапустит сервис.
-3. Чтобы заполнить БД тестовыми ресторанами, в **Shell** (вкладка в сервисе) выполните:
-   ```bash
-   npx prisma db seed
-   ```
-   (Если Shell нет — один раз запустите локально с `DATABASE_URL` от Render: `npx prisma db push` и `npm run db:seed`.)
-
-### 5. Дальше
-
-Любой пуш в `main` на GitHub автоматически запускает новый деплой на Render:
+Обновления деплоятся автоматически при пуше в `main`:
 
 ```bash
 git add .
