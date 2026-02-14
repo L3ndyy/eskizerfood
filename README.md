@@ -7,7 +7,7 @@
 - **Next.js 16** (App Router, Server Actions, React Server Components)
 - **TypeScript** (строгий режим)
 - **Tailwind CSS** + shadcn/ui компоненты
-- **Prisma** + SQLite (локально) / PostgreSQL (production)
+- **Prisma** + PostgreSQL (локально и на Railway)
 - **NextAuth.js v5** — email + пароль
 - **Zustand** + TanStack Query — состояние и данные
 - **Framer Motion** — анимации
@@ -24,14 +24,11 @@ npm install
 
 ### 2. База данных
 
-Проект использует SQLite по умолчанию (файл `prisma/dev.db`). База создаётся автоматически.
-
-Для PostgreSQL: создайте `.env` и укажите:
+Создай файл `.env` в корне проекта и укажи подключение к PostgreSQL:
 ```
 DATABASE_URL="postgresql://user:password@localhost:5432/food_delivery"
 ```
-
-Не забудьте обновить `prisma/schema.prisma` для PostgreSQL (provider = "postgresql").
+Можно использовать бесплатный облачный Postgres ([Neon](https://neon.tech), [Supabase](https://supabase.com)) или запустить локально: `docker run -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres`, тогда `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"`.
 
 ### 3. Миграции и seed
 
@@ -58,24 +55,23 @@ npx prisma studio
 1. Зайди на [railway.app](https://railway.app), войди через **GitHub**.
 2. **New Project** → **Deploy from GitHub repo** → выбери репозиторий **eskizerfood** (или свой).
 3. В проекте нажми **+ New** → **Database** → **PostgreSQL**. Railway создаст БД и подставит `DATABASE_URL` в переменные.
-4. Открой свой **Service** (приложение), вкладка **Variables**. Добавь вручную:
-   - `NEXTAUTH_SECRET` — любая длинная случайная строка.
-   - `NEXTAUTH_URL` — пока пусто; после первого деплоя вставь сюда URL вида `https://твой-сервис.up.railway.app`.
-5. В **Settings** сервиса проверь:
-   - **Build Command:** `npx prisma generate && npx prisma db push && npm run build`
-   - **Start Command:** `npm run start`
-6. **Deploy** (или пуш в GitHub — деплой запустится сам).
+4. **Переменные (NEXTAUTH_SECRET и NEXTAUTH_URL):**
+   - В списке сервисов проекта кликни по **сервису с приложением** (не по базе).
+   - Сверху появятся вкладки: **Deployments**, **Variables**, **Settings** и т.д.
+   - Открой вкладку **Variables**. Нажми **+ New Variable** или **Add variable** и добавь:
+     - Имя: `NEXTAUTH_SECRET`, значение: любая длинная случайная строка.
+     - Имя: `NEXTAUTH_URL`, значение: пока можно оставить пустым или `https://твой-сервис.up.railway.app` (подставишь точный URL после деплоя).
+5. **Start Command и Prisma (pre-deploy):**
+   - В том же сервисе открой вкладку **Settings** → в правой колонке выбери **Deploy**.
+   - В блоке **Deploy** нажми **+ Start Command** и укажи: `npm run start`.
+   - Ниже нажми **+ Add pre-deploy step** — туда добавь команду, которая выполнится перед каждым запуском (миграции Prisma):
+     - Команда: `npx prisma generate && npx prisma db push`
+   - Отдельного поля «Build Command» в Railway нет: сборка (`npm run build`) выполняется автоматически для Next.js. Pre-deploy step как раз нужен, чтобы перед стартом приложения применить схему БД.
+6. Сохрани и дождись деплоя (или сделай пуш в GitHub — деплой запустится сам).
 
-После деплоя открой URL сервиса, скопируй его в `NEXTAUTH_URL` и перезапусти. Чтобы заполнить БД тестовыми ресторанами: в **Settings** → **One-off command** (или через CLI) выполни `npx prisma db seed`.
+После деплоя: в **Settings** найди **Domains** / **Public URL**, скопируй ссылку (например `https://твой-сервис.up.railway.app`), вставь её в переменную `NEXTAUTH_URL` во вкладке **Variables** и сохрани. Сервис перезапустится. Чтобы заполнить БД тестовыми ресторанами: во вкладке сервиса нажми **⋮** (три точки) → **Run Command** (или в **Settings** → **One-off command**) и выполни `npx prisma db seed`.
 
-**Важно:** для Railway в `prisma/schema.prisma` в блоке `datasource db` должно быть:
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
-(Локально для SQLite потом можно вернуть `provider = "sqlite"` без `url`.)
+**Про базу на Railway:** в проекте уже настроено подключение к PostgreSQL через переменную `DATABASE_URL`. Railway сам подставляет её из своей БД — **ничего вручную в коде менять не нужно**, просто добавь сервис PostgreSQL в проект и переменные (см. выше).
 
 ### Команды для GitHub (код уже в репо)
 
