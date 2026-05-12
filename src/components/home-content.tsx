@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, SlidersHorizontal, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,34 +10,8 @@ import { RestaurantCardSkeleton } from '@/components/restaurant-card-skeleton';
 import { getRestaurants } from '@/app/actions/restaurants';
 import type { RestaurantWithDishes } from '@/app/actions/restaurants';
 
-const useStaticData = process.env.NEXT_PUBLIC_USE_STATIC_DATA === 'true';
-
-function filterAndSort(
-  list: RestaurantWithDishes[],
-  opts: { search?: string; cuisine?: string; sort?: 'rating' | 'deliveryTime' | 'minOrder' }
-) {
-  let filtered = list;
-  if (opts.search) {
-    const q = opts.search.toLowerCase();
-    filtered = filtered.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        (Array.isArray(r.cuisineTypes) ? r.cuisineTypes.join(' ').toLowerCase().includes(q) : false)
-    );
-  }
-  if (opts.cuisine) {
-    const c = opts.cuisine.toLowerCase();
-    filtered = filtered.filter((r) =>
-      Array.isArray(r.cuisineTypes)
-        ? r.cuisineTypes.some((t) => t.toLowerCase().includes(c))
-        : false
-    );
-  }
-  if (opts.sort === 'deliveryTime') filtered = [...filtered].sort((a, b) => a.deliveryTime - b.deliveryTime);
-  else if (opts.sort === 'minOrder') filtered = [...filtered].sort((a, b) => a.minOrder - b.minOrder);
-  else filtered = [...filtered].sort((a, b) => b.rating - a.rating);
-  return filtered;
-}
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
+const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
 export function HomeContent() {
   const [restaurants, setRestaurants] = useState<RestaurantWithDishes[]>([]);
@@ -46,28 +21,19 @@ export function HomeContent() {
   const [sort, setSort] = useState<'rating' | 'deliveryTime' | 'minOrder'>('rating');
   const [showFilters, setShowFilters] = useState(false);
 
-  const loadRestaurants = async () => {
+  const loadRestaurants = useCallback(async () => {
     setLoading(true);
-    if (useStaticData) {
-      try {
-        const base = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_BASE_PATH || '') : (process.env.BASE_PATH || '');
-        const res = await fetch(`${base}/data/restaurants.json`);
-        const data = (await res.json()) as RestaurantWithDishes[];
-        setRestaurants(filterAndSort(data, { search: search || undefined, cuisine: cuisine || undefined, sort }));
-      } catch {
-        setRestaurants([]);
-      }
-      setLoading(false);
-      return;
-    }
     const data = await getRestaurants({ search: search || undefined, cuisine: cuisine || undefined, sort });
     setRestaurants(data);
     setLoading(false);
-  };
+  }, [search, cuisine, sort]);
 
   useEffect(() => {
-    loadRestaurants();
-  }, [cuisine, sort]);
+    const id = requestAnimationFrame(() => {
+      void loadRestaurants();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [loadRestaurants]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,48 +47,90 @@ export function HomeContent() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Hero + Search */}
-      <section className="space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+    <motion.div
+      className="space-y-6"
+      initial="hidden"
+      animate="show"
+      variants={{ show: { transition: { staggerChildren: 0.04 } } }}
+    >
+      {/* Hero + Search — компактный блок */}
+      <motion.section
+        className="space-y-4 max-w-3xl mx-auto"
+        variants={item}
+      >
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground md:text-5xl md:leading-[1.1]">
             Доставка еды из лучших ресторанов
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <motion.p
+            className="mt-2 text-muted-foreground text-sm md:text-base"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.35 }}
+          >
             Закажите любимые блюда с доставкой на дом
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
-        <form onSubmit={handleSearch} className="mx-auto flex max-w-2xl gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <motion.form
+          onSubmit={handleSearch}
+          className="flex gap-2 rounded-2xl border border-border/80 bg-card/80 p-2 shadow-md shadow-black/[0.03] backdrop-blur-sm focus-within:ring-2 focus-within:ring-primary/25 focus-within:border-primary/35 transition-all dark:shadow-black/20"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="relative flex-1 group">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform duration-200 group-focus-within:scale-110" />
             <Input
               placeholder="Поиск ресторанов..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
-          <Button type="submit">Найти</Button>
-        </form>
+          <Button type="submit" size="sm" className="rounded-xl shrink-0 transition-transform active:scale-95">Найти</Button>
+        </motion.form>
 
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        <motion.div
+          className="flex flex-wrap items-center justify-center gap-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.35 }}
+        >
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
+            className="transition-all duration-200 hover:scale-105 active:scale-95 rounded-full px-4"
           >
             <SlidersHorizontal className="mr-2 h-4 w-4" />
             Фильтры
           </Button>
-          <Button variant="outline" size="sm" onClick={handleRandomizer}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRandomizer}
+            className="transition-all duration-200 hover:scale-105 active:scale-95 hover:border-primary/50 rounded-full px-4"
+          >
             <Shuffle className="mr-2 h-4 w-4" />
             Что поесть?
           </Button>
-        </div>
+        </motion.div>
 
+        <AnimatePresence mode="wait">
         {showFilters && (
-          <div className="flex flex-wrap gap-4 rounded-lg border border-border bg-muted/50 p-4">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="flex flex-wrap gap-4 rounded-xl border border-border bg-muted/50 p-4 overflow-hidden"
+          >
             <div>
               <label className="mb-1 block text-sm font-medium">Кухня</label>
               <select
@@ -151,45 +159,87 @@ export function HomeContent() {
                 <option value="minOrder">По мин. заказу</option>
               </select>
             </div>
-          </div>
+          </motion.div>
         )}
-      </section>
+        </AnimatePresence>
+      </motion.section>
 
       {/* Popular nearby */}
       {restaurants.length > 0 && !search && !cuisine && (
-        <section>
-          <h2 className="mb-6 text-xl font-semibold">Популярное рядом</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {restaurants
-              .slice(0, 4)
-              .map((r, i) => (
-                <RestaurantCard key={r.id} restaurant={r} index={i} />
-              ))}
-          </div>
-        </section>
+        <motion.section
+          className="space-y-4"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+            <span className="h-1 w-8 rounded-full bg-primary" />
+            Популярное рядом
+          </h2>
+          <motion.div
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            variants={container}
+            initial="hidden"
+            animate="show"
+          >
+            {restaurants.slice(0, 4).map((r, i) => (
+              <RestaurantCard key={r.id} restaurant={r} index={i} />
+            ))}
+          </motion.div>
+        </motion.section>
       )}
 
       {/* Restaurants grid */}
-      <section>
-        <h2 className="mb-6 text-xl font-semibold">Рестораны</h2>
-        {loading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <RestaurantCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : restaurants.length === 0 ? (
-          <div className="py-16 text-center text-muted-foreground">
-            Рестораны не найдены. Попробуйте изменить параметры поиска.
-          </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {restaurants.map((r, i) => (
-              <RestaurantCard key={r.id} restaurant={r} index={i} />
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
+      <motion.section
+        className="space-y-4"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+          <span className="h-1 w-8 rounded-full bg-primary" />
+          Рестораны
+        </h2>
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="skeleton"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {Array.from({ length: 9 }).map((_, i) => (
+                <RestaurantCardSkeleton key={i} index={i} />
+              ))}
+            </motion.div>
+          ) : restaurants.length === 0 ? (
+            <motion.div
+              key="empty"
+              className="py-12 text-center text-muted-foreground rounded-xl border border-dashed border-border bg-muted/30"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              Рестораны не найдены. Попробуйте изменить параметры поиска.
+            </motion.div>
+          ) : (
+            <motion.div
+              key="list"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              variants={container}
+              initial="hidden"
+              animate="show"
+            >
+              {restaurants.map((r, i) => (
+                <RestaurantCard key={r.id} restaurant={r} index={i} />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.section>
+    </motion.div>
   );
 }

@@ -9,8 +9,7 @@ import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 
 export default function CartPage() {
-  const { items, restaurantId, updateQuantity, removeItem, getTotal } =
-    useCartStore();
+  const { items, updateQuantity, getTotal } = useCartStore();
 
   const restaurantNameFromItems = items[0]?.restaurantName;
 

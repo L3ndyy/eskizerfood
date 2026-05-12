@@ -37,10 +37,11 @@ export default async function OrderStatusPage({
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold">Заказ #{order.id.slice(-6)}</h1>
+      <h1 className="font-display text-2xl font-bold tracking-tight">Заказ #{order.id.slice(-6)}</h1>
       <p className="mt-2 text-muted-foreground">
         {order.restaurant.name} • {new Date(order.createdAt).toLocaleDateString('ru-RU')}
       </p>
+      <p className="mt-1 text-sm font-medium text-primary">{statusLabels[order.status]}</p>
 
       <OrderStatusSimulator orderId={order.id} status={order.status} />
       <div className="mt-8">

@@ -35,7 +35,7 @@ export default function RegisterPage() {
       >
         <div className="text-center">
           <Link href="/" className="text-2xl font-bold text-primary">
-            eskizer food
+            FoodExpress
           </Link>
           <h1 className="mt-6 text-2xl font-semibold">Регистрация</h1>
           <p className="mt-2 text-muted-foreground">

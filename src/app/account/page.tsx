@@ -90,7 +90,7 @@ export default async function AccountPage() {
               </p>
             ) : (
               <ul className="space-y-4">
-                {orders.map((order: (typeof orders)[number]) => (
+                {orders.map((order) => (
                   <li
                     key={order.id}
                     className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0"

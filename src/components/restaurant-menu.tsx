@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useMounted } from '@/hooks/use-mounted';
 import { motion } from 'framer-motion';
 import { Heart, Plus, Minus } from 'lucide-react';
@@ -111,15 +112,16 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
                     className="flex gap-4 rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-md"
                   >
                     <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
-                      <img
+                      <Image
                         src={getDishImageUrl(
                           dish.image,
                           dish.category?.slug
                         )}
                         alt={dish.name}
-                        className="h-full w-full object-cover"
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
+                        fill
+                        className="object-cover"
+                        sizes="96px"
+                        unoptimized
                       />
                     </div>
                     <div className="min-w-0 flex-1">

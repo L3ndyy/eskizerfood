@@ -17,28 +17,27 @@ export async function getRestaurants(opts?: {
     },
   });
 
-  type RestaurantRow = (typeof restaurants)[number];
-  let filtered: RestaurantRow[] = restaurants;
+  let filtered = restaurants;
   if (opts?.search) {
     const q = opts.search.toLowerCase();
     filtered = filtered.filter(
-      (r: RestaurantRow) =>
+      (r) =>
         r.name.toLowerCase().includes(q) ||
         r.cuisineTypes?.toLowerCase().includes(q)
     );
   }
   if (opts?.cuisine) {
-    filtered = filtered.filter((r: RestaurantRow) =>
+    filtered = filtered.filter((r) =>
       r.cuisineTypes?.toLowerCase().includes(opts!.cuisine!.toLowerCase())
     );
   }
   if (opts?.sort === 'deliveryTime') {
-    filtered = [...filtered].sort((a: RestaurantRow, b: RestaurantRow) => a.deliveryTime - b.deliveryTime);
+    filtered = [...filtered].sort((a, b) => a.deliveryTime - b.deliveryTime);
   } else if (opts?.sort === 'minOrder') {
-    filtered = [...filtered].sort((a: RestaurantRow, b: RestaurantRow) => a.minOrder - b.minOrder);
+    filtered = [...filtered].sort((a, b) => a.minOrder - b.minOrder);
   }
 
-  return filtered.map((r: RestaurantRow) => ({
+  return filtered.map((r) => ({
     ...r,
     cuisineTypes: ((): string[] => {
       try {
@@ -104,5 +103,5 @@ export async function getDishesByIds(dishIds: string[]): Promise<DishWithRestaur
     },
   });
   const order = new Map(dishIds.map((id, i) => [id, i]));
-  return dishes.sort((a: DishWithRestaurant, b: DishWithRestaurant) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  return dishes.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 }

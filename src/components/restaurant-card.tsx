@@ -21,44 +21,58 @@ export function RestaurantCard({ restaurant, index = 0 }: RestaurantCardProps) {
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -4 }}
+      className="cursor-pointer"
     >
       <Link
         href={`/restaurant/${restaurant.slug}`}
-        className="group block overflow-hidden rounded-2xl border border-border bg-card transition-shadow hover:shadow-lg"
+        className="group block overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20"
       >
         <div className="relative aspect-[16/10] overflow-hidden">
           <Image
             src={restaurant.image}
             alt={restaurant.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
-          <button
+          <motion.button
             type="button"
             onClick={(e) => {
               e.preventDefault();
               toggle(restaurant.id);
             }}
             className="absolute right-3 top-3 rounded-full bg-background/80 p-2 backdrop-blur transition-colors hover:bg-background"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
-            <Heart
-              className={`h-5 w-5 ${mounted && isFavorite ? 'fill-primary text-primary' : ''}`}
-            />
-          </button>
-          <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-background/90 px-3 py-1 text-sm font-medium backdrop-blur">
+            <motion.div
+              animate={mounted && isFavorite ? { scale: [1, 1.3, 1] } : {}}
+              transition={{ duration: 0.3 }}
+            >
+              <Heart
+                className={`h-5 w-5 transition-colors ${mounted && isFavorite ? 'fill-primary text-primary' : ''}`}
+              />
+            </motion.div>
+          </motion.button>
+          <motion.div
+            className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-background/90 px-3 py-1.5 text-sm font-medium backdrop-blur"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 + index * 0.05 }}
+          >
             <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
             {restaurant.rating}
             <span className="text-muted-foreground">
               ({restaurant.reviewCount})
             </span>
-          </div>
+          </motion.div>
         </div>
-        <div className="p-4">
-          <h3 className="font-semibold group-hover:text-primary">{restaurant.name}</h3>
+        <div className="p-4 transition-colors group-hover:bg-card/80">
+          <h3 className="font-display font-semibold transition-colors group-hover:text-primary">{restaurant.name}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
             {restaurant.cuisineTypes?.join(' • ')}
           </p>

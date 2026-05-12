@@ -4,18 +4,7 @@ import Link from 'next/link';
 import { Star, Clock, MapPin, ArrowLeft } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { getRestaurantBySlug } from '@/app/actions/restaurants';
-import type { getRestaurantBySlug as getRestaurantBySlugFn } from '@/app/actions/restaurants';
-import { getStaticRestaurantBySlug, getStaticRestaurantSlugs } from '@/lib/static-restaurants';
 import { RestaurantMenu } from '@/components/restaurant-menu';
-
-type RestaurantForMenu = NonNullable<Awaited<ReturnType<typeof getRestaurantBySlugFn>>>;
-
-const useStaticData = process.env.NEXT_PUBLIC_USE_STATIC_DATA === 'true';
-
-export async function generateStaticParams() {
-  if (!useStaticData) return [];
-  return getStaticRestaurantSlugs().map((slug) => ({ slug }));
-}
 
 export default async function RestaurantPage({
   params,
@@ -23,9 +12,7 @@ export default async function RestaurantPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const restaurant = useStaticData
-    ? await getStaticRestaurantBySlug(slug)
-    : await getRestaurantBySlug(slug);
+  const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) notFound();
 
   return (
@@ -70,8 +57,8 @@ export default async function RestaurantPage({
         </div>
       </div>
 
-      <div className="container mx-auto max-w-7xl w-full px-4 py-8">
-        <RestaurantMenu restaurant={restaurant as RestaurantForMenu} />
+      <div className="container px-4 py-8">
+        <RestaurantMenu restaurant={restaurant} />
       </div>
     </div>
   );

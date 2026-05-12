@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { UtensilsCrossed, ShoppingBag, Users } from 'lucide-react';
+import { UtensilsCrossed, ShoppingBag, Users, MessageCircle } from 'lucide-react';
 
 export default async function AdminPage() {
   const [restaurantsCount, ordersCount, usersCount] = await Promise.all([
@@ -37,6 +37,19 @@ export default async function AdminPage() {
           <div>
             <p className="font-semibold">Заказы</p>
             <p className="text-2xl font-bold">{ordersCount}</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/support"
+          className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <MessageCircle className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="font-semibold">Поддержка</p>
+            <p className="text-sm text-muted-foreground">Ответы клиентам</p>
           </div>
         </Link>
 

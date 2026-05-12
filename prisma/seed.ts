@@ -1,8 +1,11 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const url = process.env.DATABASE_URL || 'file:./dev.db';
+const adapter = new PrismaBetterSqlite3({ url });
+const prisma = new PrismaClient({ adapter });
 
 // picsum.photos - reliable placeholder images by category
 const categoryImages: Record<string, string> = {
@@ -295,7 +298,7 @@ async function main() {
 
   // Create admin user
   const hashedPassword = await bcrypt.hash('admin123', 12);
-  const adminUser = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: 'admin@food.ru' },
     update: { isAdmin: true },
     create: {

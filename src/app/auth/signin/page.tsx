@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -10,17 +10,18 @@ import { Input } from '@/components/ui/input';
 function SignInForm() {
   const searchParams = useSearchParams();
   const [csrfToken, setCsrfToken] = useState<string>('');
-  const [registeredEmail, setRegisteredEmail] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (searchParams.get('registered') === '1') {
-      setRegisteredEmail(searchParams.get('email') || '');
-    }
-    if (searchParams.get('error') === 'CredentialsSignin') {
-      setError('Неверный email или пароль');
-    }
-  }, [searchParams]);
+  const registeredEmail = useMemo(
+    () =>
+      searchParams.get('registered') === '1' ? (searchParams.get('email') ?? '') : '',
+    [searchParams]
+  );
+  const urlError = useMemo(
+    () =>
+      searchParams.get('error') === 'CredentialsSignin'
+        ? 'Неверный email или пароль'
+        : null,
+    [searchParams]
+  );
 
   useEffect(() => {
     fetch('/api/auth/csrf')
@@ -29,17 +30,17 @@ function SignInForm() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md space-y-6"
+        className="w-full max-w-md space-y-8 rounded-2xl border border-border/80 bg-card/70 p-8 shadow-xl shadow-black/[0.04] backdrop-blur-sm dark:shadow-black/30"
       >
         <div className="text-center">
-          <Link href="/" className="text-2xl font-bold text-primary">
-            eskizer food
+          <Link href="/" className="font-display text-3xl font-semibold tracking-tight text-primary">
+            FoodExpress
           </Link>
-          <h1 className="mt-6 text-2xl font-semibold">Вход в аккаунт</h1>
+          <h1 className="mt-6 text-xl font-semibold tracking-tight">Вход в аккаунт</h1>
           <p className="mt-2 text-muted-foreground">
             Войдите, чтобы оформить заказ и получать бонусы
           </p>
@@ -48,7 +49,7 @@ function SignInForm() {
         <form
           method="post"
           action="/api/auth/callback/credentials"
-          className="space-y-4"
+          className="space-y-4 pt-2"
         >
           <input type="hidden" name="csrfToken" value={csrfToken} />
           <input type="hidden" name="callbackUrl" value="/" />
@@ -58,9 +59,9 @@ function SignInForm() {
               Регистрация успешна! Войдите в аккаунт.
             </div>
           )}
-          {error && (
+          {urlError && (
             <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
+              {urlError}
             </div>
           )}
           <div className="space-y-2">

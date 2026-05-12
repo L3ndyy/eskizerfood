@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { getDishImageUrl } from '@/lib/dish-images';
@@ -21,6 +22,9 @@ export default function FavoritesPage() {
   const toggleDish = useFavoritesStore((s) => s.toggleDish);
   const isDishFavorite = useFavoritesStore((s) => s.isDishFavorite);
 
+  const restaurantIdsKey = useMemo(() => restaurantIds.join(','), [restaurantIds]);
+  const dishIdsKey = useMemo(() => dishIds.join(','), [dishIds]);
+
   useEffect(() => {
     async function load() {
       const [allRestaurants, favDishes] = await Promise.all([
@@ -33,15 +37,15 @@ export default function FavoritesPage() {
       setDishes(favDishes);
       setLoading(false);
     }
-    load();
-  }, [restaurantIds.join(','), dishIds.join(',')]);
+    void load();
+  }, [restaurantIdsKey, dishIdsKey, restaurantIds, dishIds]);
 
   const isEmpty = restaurants.length === 0 && dishes.length === 0;
 
   if (loading) {
     return (
       <div className="container px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold">Избранное</h1>
+        <h1 className="mb-6 font-display text-2xl font-bold tracking-tight">Избранное</h1>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <RestaurantCardSkeleton key={i} />
@@ -68,7 +72,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="container px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">Избранное</h1>
+      <h1 className="mb-6 font-display text-2xl font-bold tracking-tight">Избранное</h1>
 
       {restaurants.length > 0 && (
         <section className="mb-10">
@@ -92,10 +96,13 @@ export default function FavoritesPage() {
                 className="group flex gap-3 rounded-lg border border-border bg-card p-3 transition-shadow hover:shadow-md"
               >
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-                  <img
+                  <Image
                     src={getDishImageUrl(d.image, d.category?.slug)}
                     alt={d.name}
-                    className="h-full w-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                    unoptimized
                   />
                 </div>
                 <div className="min-w-0 flex-1">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Check, ChefHat, Truck } from 'lucide-react';
 
@@ -21,30 +21,16 @@ export function OrderStatusTracker({
   status: string;
   deliveryTime?: number | null;
 }) {
-  const [currentIndex, setCurrentIndex] = useState(
-    STATUS_ORDER.indexOf(status) >= 0 ? STATUS_ORDER.indexOf(status) : 0
-  );
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
+  const currentIndex = useMemo(() => {
     const idx = STATUS_ORDER.indexOf(status);
-    if (idx >= 0) setCurrentIndex(idx);
+    return idx >= 0 ? idx : 0;
   }, [status]);
 
-  useEffect(() => {
-    if (status === 'CANCELLED') {
-      setProgress(0);
-      return;
-    }
+  const targetProgress = useMemo(() => {
+    if (status === 'CANCELLED') return 0;
     const idx = STATUS_ORDER.indexOf(status);
-    const target = idx >= 0 ? ((idx + 1) / STATUS_ORDER.length) * 100 : 0;
-    const timer = setInterval(() => {
-      setProgress((p) => {
-        if (p >= target) return p;
-        return Math.min(p + 1, target);
-      });
-    }, 100);
-    return () => clearInterval(timer);
+    if (idx < 0) return 0;
+    return ((idx + 1) / STATUS_ORDER.length) * 100;
   }, [status]);
 
   if (status === 'CANCELLED') {
@@ -56,36 +42,36 @@ export function OrderStatusTracker({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6">
+    <div className="rounded-xl border border-border bg-card/80 p-6 shadow-sm backdrop-blur-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-semibold">Статус заказа</h2>
-        <span className="text-sm text-muted-foreground">
-          ~{deliveryTime} мин доставки
+        <h2 className="font-display text-lg font-semibold tracking-tight">Статус заказа</h2>
+        <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+          ~{deliveryTime} мин
         </span>
       </div>
       <div className="relative h-2 overflow-hidden rounded-full bg-muted">
         <motion.div
-          className="absolute inset-y-0 left-0 bg-primary"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.3 }}
+          className="absolute inset-y-0 left-0 rounded-full bg-primary"
+          initial={false}
+          animate={{ width: `${targetProgress}%` }}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
         />
       </div>
-      <div className="mt-6 flex justify-between">
+      <div className="mt-6 flex justify-between gap-1">
         {STEPS.filter((s) => s.key !== 'DELIVERED' || status === 'DELIVERED').map((step, i) => {
           const Icon = step.icon;
           const isActive = i <= currentIndex;
           return (
-            <div key={step.key} className="flex flex-col items-center">
+            <div key={step.key} className="flex min-w-0 flex-1 flex-col items-center">
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                  isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+                  isActive ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25' : 'bg-muted text-muted-foreground'
                 }`}
               >
                 <Icon className="h-5 w-5" />
               </div>
               <span
-                className={`mt-2 text-xs font-medium ${
+                className={`mt-2 max-w-[4.5rem] text-center text-[10px] font-medium leading-tight sm:text-xs ${
                   isActive ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
