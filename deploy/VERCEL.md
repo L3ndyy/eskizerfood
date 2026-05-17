@@ -22,17 +22,19 @@ git push -u origin main
 
 1. **Add New** → **Project** → импорт репозитория.
 2. Framework: **Next.js** (определится сам).
-3. **Environment Variables** — добавьте:
+3. **Environment Variables** — добавьте **до** Deploy (галочка Production):
 
 | Имя | Значение |
 |-----|----------|
-| `DATABASE_URL` | вставьте строку из Neon |
+| `DATABASE_URL` | `postgresql://...` из Neon (Storage) |
 | `PRISMA_PROVIDER` | `postgresql` |
 | `AUTH_SECRET` | любая строка 32+ символов |
-| `AUTH_URL` | пока можно оставить пустым, после деплоя — URL сайта |
+| `AUTH_URL` | `https://ваш-проект.vercel.app` (можно после 1-го деплоя) |
 | `NEXTAUTH_URL` | то же |
 
-4. **Deploy**.
+Без `DATABASE_URL` и `PRISMA_PROVIDER` сборка упадёт.
+
+4. **Deploy** — в логе должно быть `npm run build:vercel`, не только `prisma generate` для sqlite.
 
 ## 4. После первого деплоя — заполнить БД
 

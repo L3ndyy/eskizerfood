@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -17,7 +17,7 @@
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
     "prepare:standalone": "powershell -ExecutionPolicy Bypass -File scripts/prepare-standalone.ps1",
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/postinstall.mjs",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
