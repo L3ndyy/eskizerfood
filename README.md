@@ -55,6 +55,18 @@ npx prisma studio
 
 Откройте [http://localhost:3000](http://localhost:3000)
 
+## Деплой на Vercel (рекомендуется)
+
+Инструкция: **[deploy/VERCEL.md](deploy/VERCEL.md)** — GitHub + Neon (бесплатная БД) + `vercel.com`.
+
+## Деплой на Timeweb
+
+```powershell
+npm run dist
+```
+
+См. **deploy/КАК-ЗАГРУЗИТЬ.txt**
+
 ## Тестовые аккаунты
 
 - **Админ:** admin@food.ru / admin123
