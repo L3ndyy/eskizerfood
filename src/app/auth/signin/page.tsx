@@ -22,6 +22,10 @@ function SignInForm() {
         : null,
     [searchParams]
   );
+  const callbackUrl = useMemo(
+    () => searchParams.get('callbackUrl') || '/',
+    [searchParams]
+  );
 
   useEffect(() => {
     fetch('/api/auth/csrf')
@@ -52,7 +56,7 @@ function SignInForm() {
           className="space-y-4 pt-2"
         >
           <input type="hidden" name="csrfToken" value={csrfToken} />
-          <input type="hidden" name="callbackUrl" value="/" />
+          <input type="hidden" name="callbackUrl" value={callbackUrl} />
 
           {registeredEmail && (
             <div className="rounded-lg bg-green-500/10 p-3 text-sm text-green-600 dark:text-green-400">
@@ -98,7 +102,10 @@ function SignInForm() {
 
         <p className="text-center text-sm text-muted-foreground">
           Нет аккаунта?{' '}
-          <Link href="/auth/register" className="font-medium text-primary hover:underline">
+          <Link
+            href={`/auth/register${callbackUrl !== '/' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
+            className="font-medium text-primary hover:underline"
+          >
             Зарегистрироваться
           </Link>
         </p>

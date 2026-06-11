@@ -9,6 +9,7 @@ export default async function AdminOrdersPage() {
     include: {
       restaurant: true,
       user: { select: { name: true, email: true } },
+      items: { include: { dish: true } },
     },
   });
 
@@ -23,6 +24,7 @@ export default async function AdminOrdersPage() {
               <th className="p-4 text-left font-medium">ID</th>
               <th className="p-4 text-left font-medium">Ресторан</th>
               <th className="p-4 text-left font-medium">Клиент</th>
+              <th className="p-4 text-left font-medium">Состав</th>
               <th className="p-4 text-left font-medium">Сумма</th>
               <th className="p-4 text-left font-medium">Статус</th>
               <th className="p-4 text-left font-medium">Дата</th>
@@ -35,6 +37,11 @@ export default async function AdminOrdersPage() {
                 <td className="p-4">{order.restaurant.name}</td>
                 <td className="p-4">
                   {order.user.name || order.user.email}
+                </td>
+                <td className="max-w-xs p-4 text-muted-foreground">
+                  {order.items
+                    .map((item) => `${item.dish.name} × ${item.quantity}`)
+                    .join(', ')}
                 </td>
                 <td className="p-4">{formatPrice(order.total)}</td>
                 <td className="p-4">

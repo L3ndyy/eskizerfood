@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -17,11 +18,14 @@ function SubmitButton() {
   );
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   async function handleSubmit(formData: FormData) {
     setErrors({});
+    formData.set('callbackUrl', callbackUrl);
     const result = await register(formData);
     if (result?.error) setErrors(result.error);
   }
@@ -95,11 +99,28 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           Уже есть аккаунт?{' '}
-          <Link href="/auth/signin" className="font-medium text-primary hover:underline">
+          <Link
+            href={`/auth/signin${callbackUrl !== '/' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
+            className="font-medium text-primary hover:underline"
+          >
             Войти
           </Link>
         </p>
       </motion.div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

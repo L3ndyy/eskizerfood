@@ -53,7 +53,10 @@ export default async function AdminPage() {
           </div>
         </Link>
 
-        <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-6">
+        <Link
+          href="/admin/users"
+          className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md"
+        >
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Users className="h-6 w-6" />
           </div>
@@ -61,7 +64,7 @@ export default async function AdminPage() {
             <p className="font-semibold">Пользователи</p>
             <p className="text-2xl font-bold">{usersCount}</p>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );

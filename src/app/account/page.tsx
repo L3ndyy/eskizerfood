@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { formatPrice } from '@/lib/utils';
@@ -25,7 +26,10 @@ export default async function AccountPage() {
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
       take: 20,
-      include: { restaurant: true },
+      include: {
+        restaurant: true,
+        items: { include: { dish: true } },
+      },
     }),
     prisma.paymentCard.findMany({
       where: { userId: session.user.id },
@@ -91,32 +95,39 @@ export default async function AccountPage() {
             ) : (
               <ul className="space-y-4">
                 {orders.map((order) => (
-                  <li
-                    key={order.id}
-                    className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0"
-                  >
-                    <div>
-                      <p className="font-medium">{order.restaurant.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString('ru-RU', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}{' '}
-                        • {formatPrice(order.total)}
-                      </p>
-                    </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${
-                        order.status === 'DELIVERED'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : order.status === 'CANCELLED'
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-                      }`}
+                  <li key={order.id}>
+                    <Link
+                      href={`/orders/${order.id}`}
+                      className="flex items-start justify-between gap-4 rounded-lg border border-transparent p-2 transition-colors hover:border-border hover:bg-muted/50"
                     >
-                      {STATUS_LABELS[order.status] || order.status}
-                    </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium">{order.restaurant.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(order.createdAt).toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}{' '}
+                          • {formatPrice(order.total)}
+                        </p>
+                        <p className="mt-1 text-sm">
+                          {order.items
+                            .map((item) => `${item.dish.name} × ${item.quantity}`)
+                            .join(', ')}
+                        </p>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+                          order.status === 'DELIVERED'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : order.status === 'CANCELLED'
+                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                              : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                        }`}
+                      >
+                        {STATUS_LABELS[order.status] || order.status}
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>

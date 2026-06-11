@@ -2,23 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/phone-input';
 import { useCartStore } from '@/store/cart-store';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, isValidPhone, PHONE_VALIDATION_ERROR } from '@/lib/utils';
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const { items, restaurantId, getTotal, clearCart } = useCartStore();
   const restaurantName = items[0]?.restaurantName ?? '';
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const total = getTotal();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/auth/register?callbackUrl=/checkout');
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -26,7 +35,26 @@ export default function CheckoutPage() {
     }
   }, [items.length, router]);
 
-  if (items.length === 0) {
+  useEffect(() => {
+    if (!session?.user) return;
+
+    fetch('/api/account/profile')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.phone) setPhone(data.phone);
+      })
+      .catch(() => {});
+
+    fetch('/api/account/addresses')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const defaultAddress = data?.find?.((a: { isDefault: boolean }) => a.isDefault) ?? data?.[0];
+        if (defaultAddress?.address) setAddress(defaultAddress.address);
+      })
+      .catch(() => {});
+  }, [session?.user]);
+
+  if (status === 'loading' || status === 'unauthenticated' || items.length === 0) {
     return (
       <div className="container mx-auto flex max-w-2xl items-center justify-center px-4 py-16">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -37,6 +65,13 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!restaurantId || items.length === 0) return;
+
+    if (!isValidPhone(phone)) {
+      setPhoneError(PHONE_VALIDATION_ERROR);
+      return;
+    }
+    setPhoneError('');
+
     setLoading(true);
 
     try {
@@ -57,6 +92,11 @@ export default function CheckoutPage() {
         }),
       });
       const data = await res.json();
+
+      if (res.status === 401) {
+        router.push('/auth/register?callbackUrl=/checkout');
+        return;
+      }
 
       if (!res.ok) throw new Error(data.error || 'Ошибка создания заказа');
 
@@ -95,10 +135,17 @@ export default function CheckoutPage() {
           <PhoneInput
             id="phone"
             value={phone}
-            onChange={setPhone}
+            onChange={(value) => {
+              setPhone(value);
+              if (phoneError) setPhoneError('');
+            }}
             required
             className="mt-2"
+            aria-invalid={!!phoneError}
           />
+          {phoneError && (
+            <p className="mt-1 text-sm text-destructive">{phoneError}</p>
+          )}
         </div>
         <div>
           <label htmlFor="comment" className="block text-sm font-medium">

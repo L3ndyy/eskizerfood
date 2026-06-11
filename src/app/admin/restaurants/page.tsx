@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { formatPrice } from '@/lib/utils';
 import { Star } from 'lucide-react';
@@ -15,9 +16,10 @@ export default async function AdminRestaurantsPage() {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {restaurants.map((r) => (
-          <div
+          <Link
             key={r.id}
-            className="overflow-hidden rounded-lg border border-border bg-card"
+            href={`/restaurant/${r.slug}`}
+            className="overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md"
           >
             <div className="relative aspect-video overflow-hidden bg-muted">
               <Image
@@ -37,7 +39,7 @@ export default async function AdminRestaurantsPage() {
                 Мин. заказ: {formatPrice(r.minOrder)} • Доставка: {formatPrice(r.deliveryFee)}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

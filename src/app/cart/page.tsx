@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Minus, Plus, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,9 +11,20 @@ import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 
 export default function CartPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const { items, updateQuantity, getTotal } = useCartStore();
 
   const restaurantNameFromItems = items[0]?.restaurantName;
+
+  function handleCheckout() {
+    if (status === 'loading') return;
+    if (!session) {
+      router.push('/auth/register?callbackUrl=/checkout');
+      return;
+    }
+    router.push('/checkout');
+  }
 
   if (items.length === 0) {
     return (
@@ -94,8 +107,13 @@ export default function CartPage() {
           <span>Итого</span>
           <span>{formatPrice(total)}</span>
         </div>
-        <Button asChild className="mt-4 w-full" size="lg">
-          <Link href="/checkout">Оформить заказ</Link>
+        <Button
+          className="mt-4 w-full"
+          size="lg"
+          onClick={handleCheckout}
+          disabled={status === 'loading'}
+        >
+          Оформить заказ
         </Button>
       </div>
     </div>

@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { isValidPhone, PHONE_VALIDATION_ERROR } from '@/lib/utils';
 
 const orderSchema = z.object({
   restaurantId: z.string(),
   address: z.string().min(1),
-  phone: z.string().min(1),
+  phone: z.string().refine(isValidPhone, PHONE_VALIDATION_ERROR),
   comment: z.string().optional(),
   items: z.array(
     z.object({
@@ -27,10 +28,12 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const parsed = orderSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid data', details: parsed.error.flatten() },
-      { status: 400 }
-    );
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    const message =
+      fieldErrors.phone?.[0] ||
+      fieldErrors.address?.[0] ||
+      'Некорректные данные заказа';
+    return NextResponse.json({ error: message, details: fieldErrors }, { status: 400 });
   }
 
   const { restaurantId, address, phone, comment, items, total } = parsed.data;

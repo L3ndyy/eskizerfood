@@ -22,6 +22,12 @@ export async function register(formData: FormData) {
   }
 
   const { name, email, password } = parsed.data;
+  const callbackUrl = formData.get('callbackUrl');
+  const safeCallbackUrl =
+    typeof callbackUrl === 'string' && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
+      ? callbackUrl
+      : '/';
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return { error: { email: ['Пользователь с таким email уже существует'] } };
@@ -32,5 +38,7 @@ export async function register(formData: FormData) {
     data: { name, email, password: hashedPassword, bonusPoints: 100 },
   });
 
-  redirect(`/auth/signin?registered=1&email=${encodeURIComponent(email)}`);
+  redirect(
+    `/auth/signin?registered=1&email=${encodeURIComponent(email)}&callbackUrl=${encodeURIComponent(safeCallbackUrl)}`
+  );
 }
