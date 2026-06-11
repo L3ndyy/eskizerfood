@@ -36,6 +36,10 @@ export async function POST(
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
+  if (!user.email) {
+    return NextResponse.json({ error: 'User has no email' }, { status: 400 });
+  }
+
   const newPassword = DEFAULT_PASSWORDS[user.email] ?? 'password123';
   const hashedPassword = await bcrypt.hash(newPassword, 12);
 

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 type UserRow = {
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
   isAdmin: boolean;
   bonusPoints: number;
   createdAt: string;
@@ -24,6 +24,8 @@ export function AdminUserResetButton({ user }: { user: UserRow }) {
   const [lastPassword, setLastPassword] = useState<string | null>(null);
 
   async function handleReset() {
+    if (!user.email) return;
+
     const defaultPassword = DEFAULT_PASSWORDS[user.email] ?? 'password123';
     if (
       !confirm(
@@ -55,7 +57,7 @@ export function AdminUserResetButton({ user }: { user: UserRow }) {
         variant="outline"
         size="sm"
         onClick={handleReset}
-        disabled={loading}
+        disabled={loading || !user.email}
       >
         {loading ? 'Сброс...' : 'Сбросить пароль'}
       </Button>

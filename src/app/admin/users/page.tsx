@@ -34,7 +34,7 @@ export default async function AdminUsersPage() {
             {users.map((user) => (
               <tr key={user.id} className="border-b border-border">
                 <td className="p-4">{user.name || '—'}</td>
-                <td className="p-4">{user.email}</td>
+                <td className="p-4">{user.email ?? '—'}</td>
                 <td className="p-4">
                   {user.isAdmin ? (
                     <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
