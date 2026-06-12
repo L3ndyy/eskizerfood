@@ -9,6 +9,7 @@ import { Copy, Users, Clock, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils';
 import { saveCheckoutDraft } from '@/lib/checkout-draft';
+import { parseJsonResponse } from '@/lib/fetch-json';
 
 type GroupSessionData = {
   id: string;
@@ -21,7 +22,15 @@ type GroupSessionData = {
     slug: string;
     deliveryFee: number;
     minOrder: number;
-  };
+  } | null;
+  restaurants: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    deliveryFee: number;
+    minOrder: number;
+  }>;
+  totalDeliveryFee: number;
   initiator: { id: string; name: string | null; email: string | null };
   participants: Array<{ userId: string; displayName: string; hasPaid: boolean }>;
   cartItems: Array<{
@@ -31,8 +40,11 @@ type GroupSessionData = {
     dishName: string;
     price: number;
     quantity: number;
+    restaurantId: string;
+    restaurantName: string;
   }>;
   total: number;
+  grandTotal: number;
 };
 
 function GroupJoinContent() {
@@ -51,14 +63,16 @@ function GroupJoinContent() {
   useEffect(() => {
     if (status !== 'authenticated') return;
     fetch(`/api/group-order/${token}/join`, { method: 'POST' }).catch(() => {});
+    sessionStorage.setItem('groupOrderToken', token);
   }, [status, token]);
 
   const { data, refetch, isLoading } = useQuery<GroupSessionData>({
     queryKey: ['group-order', token],
     queryFn: async () => {
       const res = await fetch(`/api/group-order/${token}`);
-      if (!res.ok) throw new Error('Session not found');
-      return res.json();
+      const json = await parseJsonResponse<GroupSessionData>(res);
+      if (!res.ok || !json) throw new Error('Session not found');
+      return json;
     },
     enabled: status === 'authenticated',
     refetchInterval: 3000,
@@ -69,6 +83,16 @@ function GroupJoinContent() {
     () => (typeof window !== 'undefined' ? `${window.location.origin}/group-order/join/${token}` : ''),
     [token]
   );
+
+  const itemsByRestaurant = useMemo(() => {
+    if (!data) return {};
+    return data.cartItems.reduce<Record<string, typeof data.cartItems>>((acc, item) => {
+      const key = item.restaurantId;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    }, {});
+  }, [data]);
 
   async function copyLink() {
     await navigator.clipboard.writeText(joinUrl);
@@ -91,14 +115,14 @@ function GroupJoinContent() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paymentMode }),
     });
-    const result = await res.json();
-    if (!res.ok) {
-      alert(result.error || 'Ошибка');
+    const result = await parseJsonResponse<{ redirectUrl?: string; error?: string }>(res);
+    if (!res.ok || !result?.redirectUrl) {
+      alert(result?.error || 'Ошибка');
       return;
     }
 
     saveCheckoutDraft({
-      restaurantId: data!.restaurant.id,
+      restaurantId: data?.restaurants[0]?.id ?? data?.restaurant?.id ?? '',
       address: 'Групповой заказ',
       phone: '',
       groupToken: token,
@@ -117,6 +141,7 @@ function GroupJoinContent() {
   }
 
   const expiresIn = Math.max(0, Math.floor((new Date(data.expiresAt).getTime() - Date.now()) / 60000));
+  const restaurantCount = data.restaurants.length;
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -124,7 +149,11 @@ function GroupJoinContent() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-primary">Групповой заказ</p>
-            <h1 className="mt-1 text-2xl font-bold">{data.restaurant.name}</h1>
+            <h1 className="mt-1 text-2xl font-bold">
+              {restaurantCount > 1
+                ? `${restaurantCount} ресторана`
+                : data.restaurants[0]?.name ?? data.restaurant?.name ?? 'Общий заказ'}
+            </h1>
             <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4" />
               До закрытия: {expiresIn} мин • Статус: {data.status}
@@ -153,45 +182,75 @@ function GroupJoinContent() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Общая корзина</h2>
             <Button asChild variant="outline" size="sm">
-              <Link href={`/restaurant/${data.restaurant.slug}?groupToken=${token}`}>
-                Добавить блюда
-              </Link>
+              <Link href={`/?groupToken=${token}`}>Добавить блюда</Link>
             </Button>
           </div>
 
           {data.cartItems.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
               <ShoppingBag className="mx-auto mb-3 h-8 w-8" />
-              Пока никто не добавил блюда
+              Пока никто не добавил блюда. Отправьте ссылку друзьям!
             </div>
           ) : (
-            <ul className="space-y-3">
-              {data.cartItems.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-border p-4"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {item.dishName} × {item.quantity}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.userName} • {formatPrice(item.price * item.quantity)}
+            <div className="space-y-6">
+              {Object.entries(itemsByRestaurant).map(([restaurantId, items]) => {
+                const restaurant =
+                  data.restaurants.find((r) => r.id === restaurantId) ??
+                  items[0];
+                const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+                return (
+                  <div key={restaurantId} className="rounded-lg border border-border p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="font-semibold">
+                        {'name' in restaurant && typeof restaurant.name === 'string'
+                          ? restaurant.name
+                          : items[0]?.restaurantName}
+                      </h3>
+                      <Button asChild variant="ghost" size="sm">
+                        <Link
+                          href={`/restaurant/${
+                            data.restaurants.find((r) => r.id === restaurantId)?.slug ?? ''
+                          }?groupToken=${token}`}
+                        >
+                          + Ещё
+                        </Link>
+                      </Button>
+                    </div>
+                    <ul className="space-y-2">
+                      {items.map((item) => (
+                        <li key={item.id} className="flex items-center justify-between text-sm">
+                          <div>
+                            <p className="font-medium">
+                              {item.dishName} × {item.quantity}
+                            </p>
+                            <p className="text-muted-foreground">
+                              {item.userName} • {formatPrice(item.price * item.quantity)}
+                            </p>
+                          </div>
+                          {(item.userId === session?.user?.id || isInitiator) &&
+                            data.status === 'ACTIVE' && (
+                              <Button variant="ghost" size="sm" onClick={() => removeItem(item.id)}>
+                                Удалить
+                              </Button>
+                            )}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-right text-sm text-muted-foreground">
+                      {formatPrice(subtotal)}
+                      {data.restaurants.find((r) => r.id === restaurantId) && (
+                        <> + доставка {formatPrice(data.restaurants.find((r) => r.id === restaurantId)!.deliveryFee)}</>
+                      )}
                     </p>
                   </div>
-                  {(item.userId === session?.user?.id || isInitiator) && data.status === 'ACTIVE' && (
-                    <Button variant="ghost" size="sm" onClick={() => removeItem(item.id)}>
-                      Удалить
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
           )}
 
           <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-            <span className="text-lg font-semibold">Итого</span>
-            <span className="text-xl font-bold">{formatPrice(data.total + data.restaurant.deliveryFee)}</span>
+            <span className="text-lg font-semibold">Итого с доставкой</span>
+            <span className="text-xl font-bold">{formatPrice(data.grandTotal)}</span>
           </div>
         </div>
 

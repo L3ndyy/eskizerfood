@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AdminEntityForm } from '@/components/admin-entity-form';
+import { fetchAdminList } from '@/lib/fetch-json';
 
 type Restaurant = {
   id: string;
@@ -23,10 +24,7 @@ export default function AdminRestaurantsCmsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
 
   useEffect(() => {
-    fetch('/api/admin/restaurants')
-      .then((res) => res.json())
-      .then(setRestaurants)
-      .catch(() => {});
+    fetchAdminList<Restaurant>('/api/admin/restaurants').then(setRestaurants).catch(() => {});
   }, []);
 
   return (

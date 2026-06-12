@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, SlidersHorizontal, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,8 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
 export function HomeContent() {
+  const searchParams = useSearchParams();
+  const groupToken = searchParams.get('groupToken');
   const [restaurants, setRestaurants] = useState<RestaurantWithDishes[]>([]);
   const [banners, setBanners] = useState<Array<{ id: string; title: string; subtitle?: string | null; image: string; link?: string | null }>>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +54,9 @@ export function HomeContent() {
   const handleRandomizer = () => {
     if (restaurants.length === 0) return;
     const random = restaurants[Math.floor(Math.random() * restaurants.length)];
-    window.location.href = `/restaurant/${random.slug}`;
+    window.location.href = groupToken
+      ? `/restaurant/${random.slug}?groupToken=${groupToken}`
+      : `/restaurant/${random.slug}`;
   };
 
   return (
@@ -61,6 +66,17 @@ export function HomeContent() {
       animate="show"
       variants={{ show: { transition: { staggerChildren: 0.04 } } }}
     >
+      {groupToken && (
+        <motion.div
+          variants={item}
+          className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm"
+        >
+          Групповой заказ — выберите ресторан и добавляйте блюда в общую корзину.{' '}
+          <a href={`/group-order/join/${groupToken}`} className="font-medium text-primary hover:underline">
+            Вернуться к корзине группы
+          </a>
+        </motion.div>
+      )}
       {banners.length > 0 && (
         <motion.section variants={item} className="grid gap-4 md:grid-cols-2">
           {banners.map((banner) => (
@@ -215,7 +231,7 @@ export function HomeContent() {
             animate="show"
           >
             {restaurants.slice(0, 4).map((r, i) => (
-              <RestaurantCard key={r.id} restaurant={r} index={i} />
+              <RestaurantCard key={r.id} restaurant={r} index={i} groupToken={groupToken} />
             ))}
           </motion.div>
         </motion.section>
@@ -266,7 +282,7 @@ export function HomeContent() {
               animate="show"
             >
               {restaurants.map((r, i) => (
-                <RestaurantCard key={r.id} restaurant={r} index={i} />
+                <RestaurantCard key={r.id} restaurant={r} index={i} groupToken={groupToken} />
               ))}
             </motion.div>
           )}

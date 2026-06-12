@@ -287,14 +287,14 @@ model GroupSession {
   id              String             @id @default(cuid())
   token           String             @unique
   initiatorUserId String
-  restaurantId    String
+  restaurantId    String?
   status          GroupSessionStatus @default(ACTIVE)
   paymentMode     GroupPaymentMode?
   expiresAt       DateTime
   createdAt       DateTime           @default(now())
 
   initiator    User               @relation("GroupInitiator", fields: [initiatorUserId], references: [id], onDelete: Cascade)
-  restaurant   Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant?        @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
   participants GroupParticipant[]
   cartItems    GroupCartItem[]
   orders       Order[]
@@ -327,11 +327,14 @@ model GroupCartItem {
   price          Int
   quantity       Int
   modifiers      String?
+  restaurantId   String
+  restaurantName String
 
   groupSession GroupSession @relation(fields: [groupSessionId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([groupSessionId])
+  @@index([restaurantId])
 }
 
 model SiteBanner {

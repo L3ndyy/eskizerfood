@@ -38,11 +38,51 @@ git push -u origin main
 
 ## 4. После первого деплоя — заполнить БД
 
-На ПК (подставьте свой `DATABASE_URL` из Neon):
+### Вариант A — Neon SQL Editor (если `npm run db:vercel:push` даёт P1001)
+
+1. Откройте [console.neon.tech](https://console.neon.tech) → ваш проект → **SQL Editor**.
+2. На ПК откройте файл `prisma/.neon-push.sql` (или сгенерируйте заново):
+
+```powershell
+cd "C:\Users\nikik\OneDrive\Desktop\eskizerfood"
+npx cross-env PRISMA_PROVIDER=postgresql prisma migrate diff --from-empty --to-schema prisma/schema.postgresql.prisma --script -o prisma/.neon-push.sql
+```
+
+3. Скопируйте **весь** текст из `prisma/.neon-push.sql` → вставьте в SQL Editor → **Run**.
+4. Если часть уже создавалась раньше и видите `already exists` — это нормально, продолжайте или очистите схему:
+
+```sql
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+```
+
+   …и снова выполните `.neon-push.sql`.
+
+5. Заполните тестовыми данными — **Neon SQL Editor** (если `npm run db:vercel:seed` не работает с ПК):
+
+```powershell
+npm run db:neon:seed-sql
+```
+
+Откройте `prisma/.neon-seed.sql` → скопируйте всё → SQL Editor → **Run**.
+
+6. **Мультиресторанный групповой заказ** — выполните миграцию (один раз):
+
+Файл `prisma/.neon-migrate-multi-group.sql` → SQL Editor → **Run**.
+
+Или через терминал (если подключение работает):
 
 ```powershell
 $env:DATABASE_URL="postgresql://..."
 $env:PRISMA_PROVIDER="postgresql"
+npm run db:vercel:seed
+```
+
+### Вариант B — только через терминал
+
+```powershell
+cd "C:\Users\nikik\OneDrive\Desktop\eskizerfood"
+$env:DATABASE_URL="postgresql://..."
 npm run db:vercel:push
 npm run db:vercel:seed
 ```

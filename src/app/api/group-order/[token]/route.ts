@@ -17,5 +17,5 @@ export async function GET(
     return NextResponse.json({ error: 'Session not found' }, { status: 404 });
   }
 
-  return NextResponse.json(serializeGroupSession(session));
+  return NextResponse.json(await serializeGroupSession(session));
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AdminEntityForm } from '@/components/admin-entity-form';
 import { Button } from '@/components/ui/button';
+import { fetchAdminList } from '@/lib/fetch-json';
 
 type Category = { id: string; name: string; slug: string; sortOrder: number };
 
@@ -10,8 +11,7 @@ export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   async function reload() {
-    const res = await fetch('/api/admin/categories');
-    setCategories(await res.json());
+    setCategories(await fetchAdminList<Category>('/api/admin/categories'));
   }
 
   useEffect(() => {

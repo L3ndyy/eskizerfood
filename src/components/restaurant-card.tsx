@@ -12,9 +12,10 @@ import type { RestaurantWithDishes } from '@/app/actions/restaurants';
 interface RestaurantCardProps {
   restaurant: RestaurantWithDishes;
   index?: number;
+  groupToken?: string | null;
 }
 
-export function RestaurantCard({ restaurant, index = 0 }: RestaurantCardProps) {
+export function RestaurantCard({ restaurant, index = 0, groupToken }: RestaurantCardProps) {
   const mounted = useMounted();
   const isFavorite = useFavoritesStore((s) => s.isFavorite(restaurant.id));
   const toggle = useFavoritesStore((s) => s.toggle);
@@ -28,7 +29,11 @@ export function RestaurantCard({ restaurant, index = 0 }: RestaurantCardProps) {
       className="cursor-pointer"
     >
       <Link
-        href={`/restaurant/${restaurant.slug}`}
+        href={
+          groupToken
+            ? `/restaurant/${restaurant.slug}?groupToken=${groupToken}`
+            : `/restaurant/${restaurant.slug}`
+        }
         className="group block overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20"
       >
         <div className="relative aspect-[16/10] overflow-hidden">

@@ -28,9 +28,43 @@ export async function getActiveGroupSession(token: string) {
   return session;
 }
 
-export function serializeGroupSession(
+export async function serializeGroupSession(
   session: NonNullable<Awaited<ReturnType<typeof getActiveGroupSession>>>
 ) {
+  const restaurantIds = [
+    ...new Set(
+      session.cartItems
+        .map((item) => item.restaurantId)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+
+  if (session.restaurantId && !restaurantIds.includes(session.restaurantId)) {
+    restaurantIds.push(session.restaurantId);
+  }
+
+  const restaurants = restaurantIds.length
+    ? await prisma.restaurant.findMany({
+        where: { id: { in: restaurantIds }, isActive: true },
+      })
+    : session.restaurant
+      ? [session.restaurant]
+      : [];
+
+  const subtotal = session.cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+  const totalDeliveryFee = restaurants.reduce((sum, r) => sum + r.deliveryFee, 0);
+
+  const restaurantsPayload = restaurants.map((restaurant) => ({
+    id: restaurant.id,
+    name: restaurant.name,
+    slug: restaurant.slug,
+    deliveryFee: restaurant.deliveryFee,
+    minOrder: restaurant.minOrder,
+  }));
+
   return {
     id: session.id,
     token: session.token,
@@ -38,13 +72,9 @@ export function serializeGroupSession(
     paymentMode: session.paymentMode,
     expiresAt: session.expiresAt.toISOString(),
     createdAt: session.createdAt.toISOString(),
-    restaurant: {
-      id: session.restaurant.id,
-      name: session.restaurant.name,
-      slug: session.restaurant.slug,
-      deliveryFee: session.restaurant.deliveryFee,
-      minOrder: session.restaurant.minOrder,
-    },
+    restaurant: restaurantsPayload[0] ?? null,
+    restaurants: restaurantsPayload,
+    totalDeliveryFee,
     initiator: session.initiator,
     participants: session.participants.map((participant) => ({
       id: participant.id,
@@ -62,7 +92,10 @@ export function serializeGroupSession(
       price: item.price,
       quantity: item.quantity,
       modifiers: item.modifiers,
+      restaurantId: item.restaurantId,
+      restaurantName: item.restaurantName,
     })),
-    total: session.cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    total: subtotal,
+    grandTotal: subtotal + totalDeliveryFee,
   };
 }

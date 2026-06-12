@@ -6,20 +6,12 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Users, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-type RestaurantOption = {
-  id: string;
-  name: string;
-  slug: string;
-  image: string;
-};
+import { parseJsonResponse } from '@/lib/fetch-json';
 
 export default function GroupOrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status } = useSession();
-  const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
-  const [selectedId, setSelectedId] = useState(searchParams.get('restaurantId') ?? '');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -28,24 +20,20 @@ export default function GroupOrderContent() {
     }
   }, [status, router]);
 
-  useEffect(() => {
-    fetch('/api/restaurants')
-      .then((res) => (res.ok ? res.json() : []))
-      .then(setRestaurants)
-      .catch(() => {});
-  }, []);
-
   async function createSession() {
-    if (!selectedId) return;
     setLoading(true);
     try {
+      const restaurantId = searchParams.get('restaurantId');
       const res = await fetch('/api/group-order/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ restaurantId: selectedId }),
+        body: JSON.stringify(restaurantId ? { restaurantId } : {}),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Ошибка создания');
+      const data = await parseJsonResponse<{ joinUrl?: string; error?: string }>(res);
+      if (!res.ok || !data?.joinUrl) {
+        throw new Error(data?.error || 'Ошибка создания');
+      }
+      sessionStorage.setItem('groupOrderToken', data.joinUrl.split('/').pop() ?? '');
       router.push(data.joinUrl);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Ошибка');
@@ -72,30 +60,24 @@ export default function GroupOrderContent() {
           <div>
             <h1 className="text-2xl font-bold">Групповой заказ</h1>
             <p className="text-muted-foreground">
-              Соберите коллег или друзей в один заказ из одного ресторана
+              Соберите друзей и закажите из нескольких ресторанов сразу
             </p>
           </div>
         </div>
 
         <div className="mt-8 space-y-4">
-          <label className="block text-sm font-medium">Выберите ресторан</label>
-          <select
-            value={selectedId}
-            onChange={(e) => setSelectedId(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2"
-          >
-            <option value="">—</option>
-            {restaurants.map((restaurant) => (
-              <option key={restaurant.id} value={restaurant.id}>
-                {restaurant.name}
-              </option>
-            ))}
-          </select>
-
-          <Button className="w-full" size="lg" onClick={createSession} disabled={!selectedId || loading}>
+          <Button className="w-full" size="lg" onClick={createSession} disabled={loading}>
             {loading ? 'Создание...' : 'Создать групповой заказ'}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Или добавьте блюда в{' '}
+            <Link href="/cart" className="text-primary hover:underline">
+              корзину
+            </Link>{' '}
+            и нажмите «Групповой заказ» там
+          </p>
 
           <p className="text-center text-sm text-muted-foreground">
             После создания вы получите ссылку-приглашение для участников

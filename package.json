@@ -11,9 +11,10 @@
     "dist": "node scripts/dist.mjs",
     "build:cloud": "cross-env PRISMA_PROVIDER=mysql prisma generate --schema=prisma/schema.mysql.prisma && cross-env PRISMA_PROVIDER=mysql next build",
     "build:vercel": "cross-env PRISMA_PROVIDER=postgresql prisma generate --schema=prisma/schema.postgresql.prisma && cross-env PRISMA_PROVIDER=postgresql next build",
-    "db:vercel:push": "cross-env PRISMA_PROVIDER=postgresql prisma db push --schema=prisma/schema.postgresql.prisma",
-    "db:vercel:seed": "cross-env PRISMA_PROVIDER=postgresql npx tsx prisma/seed.ts",
+    "db:vercel:push": "node scripts/neon-cli-env.mjs push",
+    "db:vercel:seed": "cross-env PRISMA_PROVIDER=postgresql prisma generate --schema=prisma/schema.postgresql.prisma && cross-env PRISMA_PROVIDER=postgresql npx tsx prisma/seed.ts",
     "db:sql": "npx tsx scripts/generate-timeweb-sql.ts",
+    "db:neon:seed-sql": "npx tsx scripts/generate-neon-seed-sql.ts",
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
     "prepare:standalone": "powershell -ExecutionPolicy Bypass -File scripts/prepare-standalone.ps1",
@@ -76,6 +77,7 @@
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
     "tsx": "^4.22.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "ws": "^8.21.0"
   }
 }

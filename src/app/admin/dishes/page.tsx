@@ -3,22 +3,22 @@
 import { useEffect, useState } from 'react';
 import { AdminEntityForm } from '@/components/admin-entity-form';
 import { Button } from '@/components/ui/button';
+import { fetchAdminList } from '@/lib/fetch-json';
 
 type Dish = {
   id: string;
   name: string;
   slug: string;
   price: number;
-  restaurant: { name: string };
-  category: { name: string };
+  restaurant: { name: string } | null;
+  category: { name: string } | null;
 };
 
 export default function AdminDishesPage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
 
   async function reload() {
-    const res = await fetch('/api/admin/dishes');
-    setDishes(await res.json());
+    setDishes(await fetchAdminList<Dish>('/api/admin/dishes'));
   }
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function AdminDishesPage() {
             <div>
               <p className="font-medium">{dish.name}</p>
               <p className="text-sm text-muted-foreground">
-                {dish.restaurant.name} • {dish.category.name} • {dish.price} ₽
+                {dish.restaurant?.name ?? '—'} • {dish.category?.name ?? '—'} • {dish.price} ₽
               </p>
             </div>
             <Button

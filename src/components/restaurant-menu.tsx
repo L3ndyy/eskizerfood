@@ -115,8 +115,7 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
             <h3 className="mb-4 text-lg font-semibold">{cat.name}</h3>
             <div className="space-y-6">
               {dishesByCategory[cat.id]?.map((dish) => {
-                const qty = getQuantity(dish.id);
-                const canAdd = !restaurantId || restaurantId === restaurant.id;
+                const qty = groupToken ? 0 : getQuantity(dish.id);
                 return (
                   <motion.div
                     key={dish.id}
@@ -165,58 +164,46 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
                         <span className="font-semibold text-primary">
                           {formatPrice(dish.price)}
                         </span>
-                        {canAdd ? (
-                          qty > 0 ? (
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() =>
-                                  updateQuantity(dish.id, qty - 1)
-                                }
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="w-6 text-center font-medium">
-                                {qty}
-                              </span>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() =>
-                                  updateQuantity(dish.id, qty + 1)
-                                }
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
+                        {qty > 0 && !groupToken ? (
+                          <div className="flex items-center gap-2">
                             <Button
-                              size="sm"
-                              onClick={() =>
-                                groupToken
-                                  ? addGroupItem(dish)
-                                  : addItem({
-                                      dishId: dish.id,
-                                      dishName: dish.name,
-                                      price: dish.price,
-                                      quantity: 1,
-                                      image: dish.image ?? undefined,
-                                      restaurantId: restaurant.id,
-                                      restaurantName: restaurant.name,
-                                    })
-                              }
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(dish.id, qty - 1)}
                             >
-                              <Plus className="mr-1 h-4 w-4" />
-                              В корзину
+                              <Minus className="h-4 w-4" />
                             </Button>
-                          )
+                            <span className="w-6 text-center font-medium">{qty}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(dish.id, qty + 1)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
                         ) : (
-                          <span className="text-sm text-muted-foreground">
-                            Очистите корзину от другого ресторана
-                          </span>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              groupToken
+                                ? addGroupItem(dish)
+                                : addItem({
+                                    dishId: dish.id,
+                                    dishName: dish.name,
+                                    price: dish.price,
+                                    quantity: 1,
+                                    image: dish.image ?? undefined,
+                                    restaurantId: restaurant.id,
+                                    restaurantName: restaurant.name,
+                                  })
+                            }
+                          >
+                            <Plus className="mr-1 h-4 w-4" />
+                            {groupToken ? 'В группу' : 'В корзину'}
+                          </Button>
                         )}
                       </div>
                     </div>

@@ -70,21 +70,30 @@ export default function PaymentContent() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return;
-        setDeliveryFee(data.restaurant.deliveryFee ?? 0);
-        setMinOrder(data.restaurant.minOrder ?? 0);
+        setDeliveryFee(data.totalDeliveryFee ?? data.restaurant?.deliveryFee ?? 0);
+        setMinOrder(
+          data.restaurants?.length
+            ? Math.max(...data.restaurants.map((r: { minOrder: number }) => r.minOrder))
+            : data.restaurant?.minOrder ?? 0
+        );
         if (split) {
           const userTotal = data.cartItems
             .filter((item: { userId: string }) => item.userId === session?.user?.id)
-            .reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
+            .reduce(
+              (sum: number, item: { price: number; quantity: number }) =>
+                sum + item.price * item.quantity,
+              0
+            );
           setGroupSubtotal(userTotal);
         } else {
-          setGroupSubtotal(data.total ?? 0);
+          setGroupSubtotal(data.grandTotal ?? data.total ?? 0);
+          setDeliveryFee(0);
         }
         setDraft((prev) =>
           prev
             ? {
                 ...prev,
-                restaurantId: data.restaurant.id,
+                restaurantId: data.restaurants?.[0]?.id ?? data.restaurant?.id ?? '',
                 phone: prev.phone || '+7 (999) 000-00-00',
               }
             : prev

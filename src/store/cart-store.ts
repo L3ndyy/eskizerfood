@@ -31,18 +31,6 @@ export const useCartStore = create<CartState>()(
       addItem: (item) => {
         const { restaurantId, restaurantName } = item;
         set((state) => {
-          if (state.restaurantId && state.restaurantId !== restaurantId) {
-            return {
-              items: [
-                {
-                  ...item,
-                  quantity: item.quantity ?? 1,
-                  restaurantName,
-                },
-              ],
-              restaurantId,
-            };
-          }
           const existing = state.items.find((i) => i.dishId === item.dishId);
           if (existing) {
             return {
@@ -51,7 +39,7 @@ export const useCartStore = create<CartState>()(
                   ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
                   : i
               ),
-              restaurantId: restaurantId || state.restaurantId,
+              restaurantId: state.restaurantId ?? restaurantId,
             };
           }
           return {
@@ -59,7 +47,7 @@ export const useCartStore = create<CartState>()(
               ...state.items,
               { ...item, quantity: item.quantity ?? 1, restaurantName },
             ],
-            restaurantId: restaurantId || state.restaurantId,
+            restaurantId: state.restaurantId ?? restaurantId,
           };
         });
       },
