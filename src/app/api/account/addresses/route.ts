@@ -11,7 +11,15 @@ export async function GET() {
   const addresses = await prisma.userAddress.findMany({
     where: { userId: session.user.id },
     orderBy: { isDefault: 'desc' },
-    select: { id: true, address: true, isDefault: true },
+    select: {
+      id: true,
+      address: true,
+      city: true,
+      apartment: true,
+      lat: true,
+      lng: true,
+      isDefault: true,
+    },
   });
 
   return NextResponse.json(addresses);
@@ -24,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { address } = body;
+  const { address, city, apartment, lat, lng } = body;
   if (!address || typeof address !== 'string' || !address.trim()) {
     return NextResponse.json({ error: 'Invalid address' }, { status: 400 });
   }
@@ -35,6 +43,10 @@ export async function POST(request: Request) {
     data: {
       userId: session.user.id,
       address: address.trim(),
+      city: typeof city === 'string' ? city : null,
+      apartment: typeof apartment === 'string' ? apartment : null,
+      lat: typeof lat === 'number' ? lat : null,
+      lng: typeof lng === 'number' ? lng : null,
       isDefault: isFirst,
     },
   });

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { useMounted } from '@/hooks/use-mounted';
 import { motion } from 'framer-motion';
 import { Heart, Plus, Minus } from 'lucide-react';
@@ -19,6 +20,8 @@ interface RestaurantMenuProps {
 }
 
 export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
+  const searchParams = useSearchParams();
+  const groupToken = searchParams.get('groupToken');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     restaurant.dishes[0]?.categoryId ?? null
   );
@@ -57,6 +60,16 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  async function addGroupItem(dish: (typeof restaurant.dishes)[number]) {
+    if (!groupToken) return;
+    await fetch(`/api/group-order/${groupToken}/add-item`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dishId: dish.id, quantity: 1 }),
+    });
+    alert('Блюдо добавлено в групповую корзину');
+  }
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
@@ -183,15 +196,17 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
                             <Button
                               size="sm"
                               onClick={() =>
-                                addItem({
-                                  dishId: dish.id,
-                                  dishName: dish.name,
-                                  price: dish.price,
-                                  quantity: 1,
-                                  image: dish.image ?? undefined,
-                                  restaurantId: restaurant.id,
-                                  restaurantName: restaurant.name,
-                                })
+                                groupToken
+                                  ? addGroupItem(dish)
+                                  : addItem({
+                                      dishId: dish.id,
+                                      dishName: dish.name,
+                                      price: dish.price,
+                                      quantity: 1,
+                                      image: dish.image ?? undefined,
+                                      restaurantId: restaurant.id,
+                                      restaurantName: restaurant.name,
+                                    })
                               }
                             >
                               <Plus className="mr-1 h-4 w-4" />

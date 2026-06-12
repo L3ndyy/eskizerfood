@@ -15,6 +15,7 @@ const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
 export function HomeContent() {
   const [restaurants, setRestaurants] = useState<RestaurantWithDishes[]>([]);
+  const [banners, setBanners] = useState<Array<{ id: string; title: string; subtitle?: string | null; image: string; link?: string | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [cuisine, setCuisine] = useState('');
@@ -27,6 +28,13 @@ export function HomeContent() {
     setRestaurants(data);
     setLoading(false);
   }, [search, cuisine, sort]);
+
+  useEffect(() => {
+    fetch('/api/banners')
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setBanners)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -53,6 +61,30 @@ export function HomeContent() {
       animate="show"
       variants={{ show: { transition: { staggerChildren: 0.04 } } }}
     >
+      {banners.length > 0 && (
+        <motion.section variants={item} className="grid gap-4 md:grid-cols-2">
+          {banners.map((banner) => (
+            <a
+              key={banner.id}
+              href={banner.link || '#'}
+              className="overflow-hidden rounded-2xl border border-border bg-card"
+            >
+              <div
+                className="flex min-h-32 items-end bg-cover bg-center p-6 text-white"
+                style={{ backgroundImage: `linear-gradient(to top, rgba(0,0,0,.65), transparent), url(${banner.image})` }}
+              >
+                <div>
+                  <h2 className="text-xl font-semibold">{banner.title}</h2>
+                  {banner.subtitle && (
+                    <p className="mt-1 text-sm text-white/90">{banner.subtitle}</p>
+                  )}
+                </div>
+              </div>
+            </a>
+          ))}
+        </motion.section>
+      )}
+
       {/* Hero + Search — компактный блок */}
       <motion.section
         className="space-y-4 max-w-3xl mx-auto"

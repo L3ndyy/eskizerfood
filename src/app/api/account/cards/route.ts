@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { requireUser } from '@/lib/server/require-admin';
+
+export async function GET() {
+  const authResult = await requireUser();
+  if ('error' in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+
+  const cards = await prisma.paymentCard.findMany({
+    where: { userId: authResult.userId },
+    orderBy: { isDefault: 'desc' },
+    select: { id: true, lastFour: true, brand: true, isDefault: true },
+  });
+
+  return NextResponse.json(cards);
+}
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authResult = await requireUser();
+  if ('error' in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
   }
 
   const body = await request.json();
@@ -15,11 +30,12 @@ export async function POST(request: Request) {
   }
 
   const lastFour = number.slice(-4);
-  const isFirst = (await prisma.paymentCard.count({ where: { userId: session.user.id } })) === 0;
+  const isFirst =
+    (await prisma.paymentCard.count({ where: { userId: authResult.userId } })) === 0;
 
   await prisma.paymentCard.create({
     data: {
-      userId: session.user.id,
+      userId: authResult.userId,
       lastFour,
       brand: brand || 'Card',
       isDefault: isFirst,
@@ -30,9 +46,9 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authResult = await requireUser();
+  if ('error' in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
   }
 
   const body = await request.json();
@@ -41,11 +57,11 @@ export async function PATCH(request: Request) {
 
   await prisma.$transaction([
     prisma.paymentCard.updateMany({
-      where: { userId: session.user.id },
+      where: { userId: authResult.userId },
       data: { isDefault: false },
     }),
     prisma.paymentCard.updateMany({
-      where: { id, userId: session.user.id },
+      where: { id, userId: authResult.userId },
       data: { isDefault: true },
     }),
   ]);
@@ -54,16 +70,16 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authResult = await requireUser();
+  if ('error' in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
   }
 
   const id = request.nextUrl.searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   await prisma.paymentCard.deleteMany({
-    where: { id, userId: session.user.id },
+    where: { id, userId: authResult.userId },
   });
 
   return NextResponse.json({ ok: true });

@@ -46,6 +46,9 @@ export function Header() {
           transition={{ delay: 0.15, duration: 0.3 }}
         >
           <ThemeToggle />
+          <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+            <Link href="/group-order">Групповой заказ</Link>
+          </Button>
           <Button variant="ghost" size="icon" asChild>
             <Link href="/favorites">
               <Heart className="h-5 w-5" />
@@ -84,7 +87,16 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={async () => {
+                  try {
+                    await fetch('/api/cart', { method: 'DELETE' });
+                  } catch {
+                    // ignore
+                  }
+                  useCartStore.getState().clearCart();
+                  localStorage.removeItem('food-delivery-cart');
+                  signOut({ callbackUrl: '/' });
+                }}
                 className="text-muted-foreground"
               >
                 Выйти

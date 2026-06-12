@@ -107,6 +107,27 @@ async function main() {
   }
   console.log('✓ Favorites created');
 
+  await prisma.siteBanner.deleteMany();
+  await prisma.siteBanner.createMany({
+    data: [
+      {
+        title: 'Групповой заказ',
+        subtitle: 'Соберите команду и закажите вместе',
+        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200',
+        link: '/group-order',
+        sortOrder: 0,
+      },
+      {
+        title: 'Бесплатная доставка',
+        subtitle: 'При заказе от 1500 ₽',
+        image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200',
+        link: '/',
+        sortOrder: 1,
+      },
+    ],
+  });
+  console.log('✓ Banners created');
+
   console.log('🎉 Seed completed!');
 }
 

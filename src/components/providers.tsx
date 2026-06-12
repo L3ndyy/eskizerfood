@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
+import { CartSyncProvider } from '@/components/cart-sync-provider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -26,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <CartSyncProvider>{children}</CartSyncProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </SessionProvider>

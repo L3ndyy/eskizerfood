@@ -56,7 +56,11 @@ model User {
   favorites    Favorite[]
   paymentCards PaymentCard[]
   addresses    UserAddress[]
+  cartItems    UserCartItem[]
   supportConversation SupportConversation?
+  groupSessionsInitiated GroupSession[] @relation("GroupInitiator")
+  groupParticipants      GroupParticipant[]
+  groupCartItems         GroupCartItem[]
 }
 
 model SupportConversation {
@@ -89,7 +93,8 @@ model PaymentCard {
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
 
   @@index([userId])
 }
@@ -98,11 +103,32 @@ model UserAddress {
   id        String   @id @default(cuid())
   userId    String
   address   String
+  city      String?
+  apartment String?
+  lat       Float?
+  lng       Float?
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+model UserCartItem {
+  id             String @id @default(cuid())
+  userId         String
+  dishId         String
+  restaurantId   String
+  quantity       Int
+  dishName       String
+  price          Int
+  image          String?
+  restaurantName String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dishId])
   @@index([userId])
 }
 
@@ -133,9 +159,10 @@ model Restaurant {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  dishes      Dish[]
-  orders      Order[]
-  favorites   Favorite[]
+  dishes        Dish[]
+  orders        Order[]
+  favorites     Favorite[]
+  groupSessions GroupSession[]
 }
 
 model Category {
@@ -173,21 +200,41 @@ model Dish {
 }
 
 model Order {
-  id            String      @id @default(cuid())
-  userId        String
-  restaurantId  String
-  status        OrderStatus @default(PENDING)
-  total         Int         // total in rubles
-  address       String
-  phone         String
-  comment       String?
-  deliveryTime  Int?        // estimated minutes
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id              String        @id @default(cuid())
+  userId          String
+  restaurantId    String
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   PaymentMethod?
+  paymentCardId   String?
+  groupSessionId  String?
+  total           Int
+  address         String
+  phone           String
+  comment         String?
+  lat             Float?
+  lng             Float?
+  deliveryTime    Int?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  items      OrderItem[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  paymentCard  PaymentCard?  @relation(fields: [paymentCardId], references: [id], onDelete: SetNull)
+  groupSession GroupSession? @relation(fields: [groupSessionId], references: [id], onDelete: SetNull)
+  items        OrderItem[]
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+  SPLIT
 }
 
 enum OrderStatus {
@@ -222,4 +269,79 @@ model Favorite {
 
   @@unique([userId, restaurantId])
   @@index([userId])
+}
+
+enum GroupPaymentMode {
+  CENTRALIZED
+  SPLIT
+}
+
+enum GroupSessionStatus {
+  ACTIVE
+  CLOSED
+  EXPIRED
+  COMPLETED
+}
+
+model GroupSession {
+  id              String             @id @default(cuid())
+  token           String             @unique
+  initiatorUserId String
+  restaurantId    String
+  status          GroupSessionStatus @default(ACTIVE)
+  paymentMode     GroupPaymentMode?
+  expiresAt       DateTime
+  createdAt       DateTime           @default(now())
+
+  initiator    User               @relation("GroupInitiator", fields: [initiatorUserId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  participants GroupParticipant[]
+  cartItems    GroupCartItem[]
+  orders       Order[]
+
+  @@index([initiatorUserId])
+  @@index([restaurantId])
+}
+
+model GroupParticipant {
+  id             String   @id @default(cuid())
+  groupSessionId String
+  userId         String
+  displayName    String
+  hasPaid        Boolean  @default(false)
+  joinedAt       DateTime @default(now())
+
+  groupSession GroupSession @relation(fields: [groupSessionId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupSessionId, userId])
+  @@index([groupSessionId])
+}
+
+model GroupCartItem {
+  id             String  @id @default(cuid())
+  groupSessionId String
+  userId         String
+  dishId         String
+  dishName       String
+  price          Int
+  quantity       Int
+  modifiers      String?
+
+  groupSession GroupSession @relation(fields: [groupSessionId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([groupSessionId])
+}
+
+model SiteBanner {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String?
+  image     String
+  link      String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

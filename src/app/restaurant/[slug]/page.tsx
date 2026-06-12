@@ -1,10 +1,12 @@
+import { Suspense } from 'react';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
-import { Star, Clock, MapPin, ArrowLeft } from 'lucide-react';
+import { Star, Clock, MapPin, ArrowLeft, Users } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { getRestaurantBySlug } from '@/app/actions/restaurants';
 import { RestaurantMenu } from '@/components/restaurant-menu';
+import { Button } from '@/components/ui/button';
 
 export default async function RestaurantPage({
   params,
@@ -50,15 +52,23 @@ export default async function RestaurantPage({
             </span>
           </div>
           <p className="mt-2 text-sm text-white/80">{restaurant.description}</p>
-          <div className="mt-2 flex gap-4 text-sm">
+          <div className="mt-2 flex flex-wrap gap-4 text-sm">
             <span>Мин. заказ: {formatPrice(restaurant.minOrder)}</span>
             <span>Доставка: {formatPrice(restaurant.deliveryFee)}</span>
           </div>
+          <Button asChild size="sm" className="mt-4">
+            <Link href={`/group-order?restaurantId=${restaurant.id}`}>
+              <Users className="mr-2 h-4 w-4" />
+              Групповой заказ
+            </Link>
+          </Button>
         </div>
       </div>
 
       <div className="container px-4 py-8">
-        <RestaurantMenu restaurant={restaurant} />
+        <Suspense fallback={<div className="py-8 text-center">Загрузка меню...</div>}>
+          <RestaurantMenu restaurant={restaurant} />
+        </Suspense>
       </div>
     </div>
   );

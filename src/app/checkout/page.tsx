@@ -7,19 +7,37 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/phone-input';
+import { AddressMapPicker } from '@/components/address-map-picker-client';
+import { CheckoutStepper } from '@/components/checkout-stepper';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice, isValidPhone, PHONE_VALIDATION_ERROR } from '@/lib/utils';
+import { saveCheckoutDraft } from '@/lib/checkout-draft';
+
+type SavedAddress = {
+  id: string;
+  address: string;
+  city?: string | null;
+  apartment?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  isDefault: boolean;
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { items, restaurantId, getTotal, clearCart } = useCartStore();
+  const { items, restaurantId, getTotal } = useCartStore();
   const restaurantName = items[0]?.restaurantName ?? '';
   const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [apartment, setApartment] = useState('');
+  const [lat, setLat] = useState<number | undefined>();
+  const [lng, setLng] = useState<number | undefined>();
   const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
   const [phoneError, setPhoneError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [addressError, setAddressError] = useState('');
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
 
   const total = getTotal();
 
@@ -47,9 +65,17 @@ export default function CheckoutPage() {
 
     fetch('/api/account/addresses')
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        const defaultAddress = data?.find?.((a: { isDefault: boolean }) => a.isDefault) ?? data?.[0];
-        if (defaultAddress?.address) setAddress(defaultAddress.address);
+      .then((data: SavedAddress[] | null) => {
+        if (!data) return;
+        setSavedAddresses(data);
+        const defaultAddress = data.find((a) => a.isDefault) ?? data[0];
+        if (defaultAddress) {
+          setAddress(defaultAddress.address);
+          setCity(defaultAddress.city ?? '');
+          setApartment(defaultAddress.apartment ?? '');
+          setLat(defaultAddress.lat ?? undefined);
+          setLng(defaultAddress.lng ?? undefined);
+        }
       })
       .catch(() => {});
   }, [session?.user]);
@@ -62,72 +88,113 @@ export default function CheckoutPage() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  function handleAddressSelect(id: string) {
+    const selected = savedAddresses.find((item) => item.id === id);
+    if (!selected) return;
+    setAddress(selected.address);
+    setCity(selected.city ?? '');
+    setApartment(selected.apartment ?? '');
+    setLat(selected.lat ?? undefined);
+    setLng(selected.lng ?? undefined);
+    setAddressError('');
+  }
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!restaurantId || items.length === 0) return;
 
+    if (address.trim().length < 10) {
+      setAddressError('Введите полный адрес доставки');
+      return;
+    }
+    if (!lat || !lng) {
+      setAddressError('Укажите точку на карте или дождитесь определения адреса');
+      return;
+    }
     if (!isValidPhone(phone)) {
       setPhoneError(PHONE_VALIDATION_ERROR);
       return;
     }
+
+    setAddressError('');
     setPhoneError('');
 
-    setLoading(true);
+    saveCheckoutDraft({
+      restaurantId,
+      address: apartment ? `${address}, кв. ${apartment}` : address,
+      phone,
+      comment: comment || undefined,
+      lat,
+      lng,
+      city,
+      apartment,
+    });
 
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          restaurantId,
-          address,
-          phone,
-          comment: comment || undefined,
-          items: items.map((i) => ({
-            dishId: i.dishId,
-            quantity: i.quantity,
-            price: i.price,
-          })),
-          total,
-        }),
-      });
-      const data = await res.json();
-
-      if (res.status === 401) {
-        router.push('/auth/register?callbackUrl=/checkout');
-        return;
-      }
-
-      if (!res.ok) throw new Error(data.error || 'Ошибка создания заказа');
-
-      clearCart();
-      router.push(`/orders/${data.orderId}`);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Ошибка оформления заказа');
-    } finally {
-      setLoading(false);
-    }
-  };
+    router.push('/payment');
+  }
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
+      <CheckoutStepper current={1} />
       <h1 className="text-2xl font-bold">Оформление заказа</h1>
       <p className="mt-2 text-muted-foreground">{restaurantName}</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        {savedAddresses.length > 0 && (
+          <div>
+            <label htmlFor="saved-address" className="block text-sm font-medium">
+              Сохранённые адреса
+            </label>
+            <select
+              id="saved-address"
+              className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              defaultValue=""
+              onChange={(e) => handleAddressSelect(e.target.value)}
+            >
+              <option value="" disabled>
+                Выберите адрес
+              </option>
+              {savedAddresses.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.address}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
-          <label htmlFor="address" className="block text-sm font-medium">
-            Адрес доставки
+          <label className="block text-sm font-medium">Адрес доставки</label>
+          <div className="mt-2">
+            <AddressMapPicker
+              address={address}
+              lat={lat}
+              lng={lng}
+              error={addressError}
+              onChange={(value) => {
+                setAddress(value.address);
+                setLat(value.lat);
+                setLng(value.lng);
+                if (value.city) setCity(value.city);
+                if (addressError) setAddressError('');
+              }}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="apartment" className="block text-sm font-medium">
+            Квартира / офис
           </label>
           <Input
-            id="address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="ул. Примерная, д. 1, кв. 1"
-            required
+            id="apartment"
+            value={apartment}
+            onChange={(e) => setApartment(e.target.value)}
+            placeholder="12"
             className="mt-2"
           />
         </div>
+
         <div>
           <label htmlFor="phone" className="block text-sm font-medium">
             Телефон
@@ -147,6 +214,7 @@ export default function CheckoutPage() {
             <p className="mt-1 text-sm text-destructive">{phoneError}</p>
           )}
         </div>
+
         <div>
           <label htmlFor="comment" className="block text-sm font-medium">
             Комментарий к заказу (необязательно)
@@ -178,8 +246,8 @@ export default function CheckoutPage() {
           <Button type="button" variant="outline" asChild>
             <Link href="/cart">Назад</Link>
           </Button>
-          <Button type="submit" disabled={loading} className="flex-1">
-            {loading ? 'Оформление...' : 'Оформить заказ'}
+          <Button type="submit" className="flex-1">
+            Далее к оплате
           </Button>
         </div>
       </form>
