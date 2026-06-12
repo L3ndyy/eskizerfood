@@ -1,6 +1,7 @@
-import { auth } from '@/auth';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/auth.config';
+
+const { auth } = NextAuth(authConfig);
 
 const protectedPaths = [
   '/account',
@@ -10,31 +11,34 @@ const protectedPaths = [
   '/admin',
 ];
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export default auth((req) => {
+  const { pathname } = req.nextUrl;
   const needsAuth = protectedPaths.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
 
-  if (!needsAuth) return NextResponse.next();
+  if (!needsAuth) return;
 
-  const session = await auth();
-  if (!session?.user?.id) {
-    const signInUrl = new URL('/auth/register', request.url);
+  if (!req.auth?.user) {
+    const signInUrl = new URL('/auth/register', req.url);
     signInUrl.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(signInUrl);
+    return Response.redirect(signInUrl);
   }
 
   if (pathname.startsWith('/admin')) {
-    const isAdmin = (session.user as { isAdmin?: boolean })?.isAdmin ?? false;
+    const isAdmin = (req.auth.user as { isAdmin?: boolean })?.isAdmin ?? false;
     if (!isAdmin) {
-      return NextResponse.redirect(new URL('/', request.url));
+      return Response.redirect(new URL('/', req.url));
     }
   }
-
-  return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ['/account/:path*', '/checkout/:path*', '/payment/:path*', '/group-order/:path*', '/admin/:path*'],
+  matcher: [
+    '/account/:path*',
+    '/checkout/:path*',
+    '/payment/:path*',
+    '/group-order/:path*',
+    '/admin/:path*',
+  ],
 };

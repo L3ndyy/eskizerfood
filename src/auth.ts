@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { authConfig } from '@/auth.config';
 
 const signInSchema = z.object({
   email: z.string().email('Некорректный email'),
@@ -10,15 +11,7 @@ const signInSchema = z.object({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  trustHost: true,
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  pages: {
-    signIn: '/auth/signin',
-  },
+  ...authConfig,
   providers: [
     Credentials({
       name: 'credentials',
@@ -48,6 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -60,14 +54,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.isAdmin = dbUser?.isAdmin ?? false;
       }
       return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        (session.user as { bonusPoints?: number }).bonusPoints = token.bonusPoints as number;
-        (session.user as { isAdmin?: boolean }).isAdmin = token.isAdmin as boolean;
-      }
-      return session;
     },
   },
 });
