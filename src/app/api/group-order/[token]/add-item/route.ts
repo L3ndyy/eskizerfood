@@ -3,7 +3,11 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getActiveGroupSession } from '@/lib/server/group-order';
 import { requireUser } from '@/lib/server/require-admin';
-import { ensureGroupOrderSchema } from '@/lib/server/ensure-group-order-schema';
+import {
+  createGroupCartItem,
+  ensureGroupOrderSchema,
+  groupCartHasRestaurantColumns,
+} from '@/lib/server/ensure-group-order-schema';
 
 const addItemSchema = z.object({
   dishId: z.string(),
@@ -82,19 +86,36 @@ export async function POST(
         data: { quantity: existing.quantity + parsed.data.quantity },
       });
     } else {
-      await prisma.groupCartItem.create({
-        data: {
-          groupSessionId: session.id,
-          userId: authResult.userId,
-          dishId: dish.id,
-          dishName: dish.name,
-          price: dish.price,
-          quantity: parsed.data.quantity,
-          modifiers: parsed.data.modifiers,
-          restaurantId: dish.restaurantId,
-          restaurantName: dish.restaurant.name,
-        },
-      });
+      const extended = await groupCartHasRestaurantColumns();
+      if (extended) {
+        await prisma.groupCartItem.create({
+          data: {
+            groupSessionId: session.id,
+            userId: authResult.userId,
+            dishId: dish.id,
+            dishName: dish.name,
+            price: dish.price,
+            quantity: parsed.data.quantity,
+            modifiers: parsed.data.modifiers,
+            restaurantId: dish.restaurantId,
+            restaurantName: dish.restaurant.name,
+          },
+        });
+      } else {
+        await createGroupCartItem(
+          session.id,
+          {
+            userId: authResult.userId,
+            dishId: dish.id,
+            dishName: dish.name,
+            price: dish.price,
+            quantity: parsed.data.quantity,
+            restaurantId: dish.restaurantId,
+            restaurantName: dish.restaurant.name,
+          },
+          false
+        );
+      }
     }
 
     if (!session.restaurantId) {

@@ -4,8 +4,11 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/server/require-admin';
 import {
+  createGroupCartItem,
   ensureGroupOrderSchema,
   getAnchorRestaurantId,
+  groupOrderTablesExist,
+  groupCartHasRestaurantColumns,
 } from '@/lib/server/ensure-group-order-schema';
 
 const cartItemSchema = z.object({
@@ -22,7 +25,18 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    if (!(await groupOrderTablesExist())) {
+      return NextResponse.json(
+        {
+          error:
+            'Таблицы группового заказа не найдены. В Neon SQL Editor выполните prisma/.neon-push.sql',
+        },
+        { status: 503 }
+      );
+    }
+
     await ensureGroupOrderSchema();
+    const extendedCartColumns = await groupCartHasRestaurantColumns();
 
     const authResult = await requireUser();
     if ('error' in authResult) {
@@ -50,6 +64,19 @@ export async function POST(request: Request) {
       if (!restaurant) {
         return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
       }
+    }
+
+    const anchorRestaurantId =
+      restaurantId ?? (await getAnchorRestaurantId());
+
+    if (!anchorRestaurantId) {
+      return NextResponse.json(
+        {
+          error:
+            'В базе нет ресторанов. В Neon SQL Editor выполните prisma/.neon-seed.sql',
+        },
+        { status: 503 }
+      );
     }
 
     const token = randomUUID();
@@ -90,16 +117,11 @@ export async function POST(request: Request) {
       }
     }
 
-    const primaryRestaurantId =
-      restaurantId ??
-      preparedItems[0]?.restaurantId ??
-      (await getAnchorRestaurantId());
-
     const session = await prisma.groupSession.create({
       data: {
         token,
         initiatorUserId: authResult.userId,
-        restaurantId: primaryRestaurantId,
+        restaurantId: anchorRestaurantId,
         expiresAt,
         participants: {
           create: {
@@ -107,9 +129,12 @@ export async function POST(request: Request) {
             displayName: user?.name || user?.email || 'Инициатор',
           },
         },
-        cartItems: preparedItems.length ? { create: preparedItems } : undefined,
       },
     });
+
+    for (const item of preparedItems) {
+      await createGroupCartItem(session.id, item, extendedCartColumns);
+    }
 
     return NextResponse.json({
       token: session.token,
@@ -117,10 +142,17 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('group-order create error:', error);
-    const message =
-      error instanceof Error && /column|restaurantId/i.test(error.message)
-        ? 'Обновите БД: выполните prisma/.neon-migrate-multi-group.sql в Neon SQL Editor'
-        : 'Ошибка создания группового заказа';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+
+    let message = 'Ошибка создания группового заказа';
+    if (/GroupSession|does not exist|42P01/i.test(detail)) {
+      message = 'Таблицы не созданы — выполните prisma/.neon-push.sql в Neon SQL Editor';
+    } else if (/restaurantId|column/i.test(detail)) {
+      message = 'Обновите БД — выполните prisma/.neon-migrate-multi-group.sql в Neon SQL Editor';
+    } else if (/Foreign key|23503/i.test(detail)) {
+      message = 'Нет ресторанов в базе — выполните prisma/.neon-seed.sql';
+    }
+
+    return NextResponse.json({ error: message, detail }, { status: 500 });
   }
 }
