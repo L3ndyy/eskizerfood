@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getActiveGroupSession } from '@/lib/server/group-order';
 import { requireUser } from '@/lib/server/require-admin';
+import { ensureGroupOrderSchema } from '@/lib/server/ensure-group-order-schema';
 
 const addItemSchema = z.object({
   dishId: z.string(),
@@ -15,6 +16,8 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    await ensureGroupOrderSchema();
+
     const authResult = await requireUser();
     if ('error' in authResult) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });

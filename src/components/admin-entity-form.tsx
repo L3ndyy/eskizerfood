@@ -75,12 +75,25 @@ export function AdminEntityForm({
               onChange={(e) => setValues((prev) => ({ ...prev, [field.name]: e.target.checked }))}
             />
           ) : (
-            <Input
-              type={field.type === 'number' ? 'number' : 'text'}
-              value={String(values[field.name] ?? '')}
-              onChange={(e) => setValues((prev) => ({ ...prev, [field.name]: e.target.value }))}
-              className="mt-1"
-            />
+            <>
+              <Input
+                type={field.type === 'number' ? 'number' : 'text'}
+                value={String(values[field.name] ?? '')}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field.name]: e.target.value }))}
+                className="mt-1"
+              />
+              {(field.name === 'image' || field.name === 'coverImage') &&
+              String(values[field.name] ?? '').startsWith('http') ? (
+                <div className="relative mt-2 h-24 w-full max-w-xs overflow-hidden rounded-lg bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={String(values[field.name])}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ) : null}
+            </>
           )}
         </div>
       ))}

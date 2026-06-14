@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { isValidPhone, PHONE_VALIDATION_ERROR } from '@/lib/utils';
 import { requireUser } from '@/lib/server/require-admin';
+import { ensureDemoCard } from '@/lib/server/ensure-demo-card';
 
 const orderSchema = z.object({
   restaurantId: z.string().optional(),
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
     const data = parsed.data;
     let items: OrderItemInput[] = data.items;
     let groupSessionId = data.groupSessionId;
+    let paymentCardId = data.paymentCardId;
 
     if (data.groupToken) {
       const session = await prisma.groupSession.findUnique({
@@ -92,13 +94,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
-    if (data.paymentMethod === 'CARD' && !data.paymentCardId) {
-      return NextResponse.json({ error: 'Select a payment card' }, { status: 400 });
+    if (data.paymentMethod === 'CARD' && !paymentCardId) {
+      await ensureDemoCard(authResult.userId);
+      const defaultCard = await prisma.paymentCard.findFirst({
+        where: { userId: authResult.userId },
+        orderBy: { isDefault: 'desc' },
+      });
+      if (defaultCard) {
+        paymentCardId = defaultCard.id;
+      } else {
+        return NextResponse.json({ error: 'Выберите или добавьте карту' }, { status: 400 });
+      }
     }
 
-    if (data.paymentCardId) {
+    if (paymentCardId) {
       const card = await prisma.paymentCard.findFirst({
-        where: { id: data.paymentCardId, userId: authResult.userId },
+        where: { id: paymentCardId, userId: authResult.userId },
       });
       if (!card) {
         return NextResponse.json({ error: 'Invalid payment card' }, { status: 400 });
@@ -114,8 +125,14 @@ export async function POST(request: NextRequest) {
     const itemsByRestaurant = new Map<string, OrderItemInput[]>();
     for (const item of items) {
       const dish = dishMap.get(item.dishId);
-      if (!dish || !dish.isAvailable) {
-        return NextResponse.json({ error: 'Some dishes are unavailable' }, { status: 400 });
+      if (!dish) {
+        return NextResponse.json(
+          { error: 'Одно из блюд больше не доступно в меню. Обновите групповую корзину.' },
+          { status: 400 }
+        );
+      }
+      if (!dish.isAvailable && !data.groupToken) {
+        return NextResponse.json({ error: 'Некоторые блюда недоступны' }, { status: 400 });
       }
       const rid = item.restaurantId || dish.restaurantId;
       if (!itemsByRestaurant.has(rid)) itemsByRestaurant.set(rid, []);
@@ -138,7 +155,10 @@ export async function POST(request: NextRequest) {
 
       let subtotal = 0;
       for (const item of restaurantItems) {
-        subtotal += dishMap.get(item.dishId)!.price * item.quantity;
+        const dish = dishMap.get(item.dishId)!;
+        const unitPrice =
+          data.groupToken && item.price != null ? item.price : dish.price;
+        subtotal += unitPrice * item.quantity;
       }
 
       if (subtotal < restaurant.minOrder) {
@@ -158,7 +178,7 @@ export async function POST(request: NextRequest) {
           status: 'PENDING',
           paymentStatus: 'PAID',
           paymentMethod: data.paymentMethod,
-          paymentCardId: data.paymentCardId,
+          paymentCardId: paymentCardId,
           groupSessionId,
           total,
           address: data.address,
@@ -168,11 +188,16 @@ export async function POST(request: NextRequest) {
           lng: data.lng,
           deliveryTime,
           items: {
-            create: restaurantItems.map((item) => ({
-              dishId: item.dishId,
-              quantity: item.quantity,
-              price: dishMap.get(item.dishId)!.price,
-            })),
+            create: restaurantItems.map((item) => {
+              const dish = dishMap.get(item.dishId)!;
+              const unitPrice =
+                data.groupToken && item.price != null ? item.price : dish.price;
+              return {
+                dishId: item.dishId,
+                quantity: item.quantity,
+                price: unitPrice,
+              };
+            }),
           },
         },
       });

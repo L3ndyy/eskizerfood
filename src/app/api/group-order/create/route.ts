@@ -3,11 +3,15 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/server/require-admin';
+import {
+  ensureGroupOrderSchema,
+  getAnchorRestaurantId,
+} from '@/lib/server/ensure-group-order-schema';
 
 const cartItemSchema = z.object({
   dishId: z.string(),
   quantity: z.number().min(1).default(1),
-  restaurantId: z.string(),
+  restaurantId: z.string().optional(),
   restaurantName: z.string().optional(),
 });
 
@@ -18,6 +22,8 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    await ensureGroupOrderSchema();
+
     const authResult = await requireUser();
     if ('error' in authResult) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
@@ -67,14 +73,10 @@ export async function POST(request: Request) {
     if (cartItems?.length) {
       for (const item of cartItems) {
         const dish = await prisma.dish.findFirst({
-          where: {
-            id: item.dishId,
-            restaurantId: item.restaurantId,
-            isAvailable: true,
-          },
-          include: { restaurant: { select: { name: true } } },
+          where: { id: item.dishId, isAvailable: true },
+          include: { restaurant: { select: { id: true, name: true, isActive: true } } },
         });
-        if (!dish) continue;
+        if (!dish || !dish.restaurant.isActive) continue;
 
         preparedItems.push({
           userId: authResult.userId,
@@ -89,7 +91,9 @@ export async function POST(request: Request) {
     }
 
     const primaryRestaurantId =
-      restaurantId ?? preparedItems[0]?.restaurantId ?? null;
+      restaurantId ??
+      preparedItems[0]?.restaurantId ??
+      (await getAnchorRestaurantId());
 
     const session = await prisma.groupSession.create({
       data: {
@@ -103,9 +107,7 @@ export async function POST(request: Request) {
             displayName: user?.name || user?.email || 'Инициатор',
           },
         },
-        cartItems: preparedItems.length
-          ? { create: preparedItems }
-          : undefined,
+        cartItems: preparedItems.length ? { create: preparedItems } : undefined,
       },
     });
 
@@ -115,6 +117,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('group-order create error:', error);
-    return NextResponse.json({ error: 'Ошибка создания группового заказа' }, { status: 500 });
+    const message =
+      error instanceof Error && /column|restaurantId/i.test(error.message)
+        ? 'Обновите БД: выполните prisma/.neon-migrate-multi-group.sql в Neon SQL Editor'
+        : 'Ошибка создания группового заказа';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

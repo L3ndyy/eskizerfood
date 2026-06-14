@@ -150,18 +150,25 @@ export default function PaymentContent() {
     try {
       let paymentCardId = selectedCardId;
 
-      if (paymentMethod === 'CARD' && newCardNumber.replace(/\D/g, '').length === 16) {
+      if (paymentMethod === 'CARD' && newCardNumber.replace(/\D/g, '').length >= 13) {
+        const digits = newCardNumber.replace(/\D/g, '');
         const cardRes = await fetch('/api/account/cards', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            number: newCardNumber.replace(/\D/g, ''),
-            brand: newCardNumber.startsWith('4') ? 'Visa' : 'Mastercard',
+            number: digits,
+            brand: digits.startsWith('4') ? 'Visa' : 'Mastercard',
           }),
         });
         if (!cardRes.ok) throw new Error('Не удалось сохранить карту');
-        const refreshed = await fetch('/api/account/cards').then((res) => res.json());
-        paymentCardId = refreshed[0]?.id ?? null;
+        const refreshed: Card[] = await fetch('/api/account/cards').then((res) => res.json());
+        setCards(refreshed);
+        paymentCardId = refreshed.find((c) => c.isDefault)?.id ?? refreshed[0]?.id ?? null;
+      }
+
+      if (paymentMethod === 'CARD' && !paymentCardId) {
+        const refreshed: Card[] = await fetch('/api/account/cards').then((res) => res.json());
+        paymentCardId = refreshed.find((c) => c.isDefault)?.id ?? refreshed[0]?.id ?? null;
       }
 
       if (paymentMethod === 'CARD' && !paymentCardId) {
@@ -257,6 +264,11 @@ export default function PaymentContent() {
 
         {paymentMethod === 'CARD' && (
           <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+            {cards.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Тестовая карта добавлена автоматически — можно сразу оплатить
+              </p>
+            )}
             {cards.map((card) => (
               <label key={card.id} className="flex items-center gap-3">
                 <input

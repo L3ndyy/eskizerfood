@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/server/require-admin';
+import { ensureDemoCard } from '@/lib/server/ensure-demo-card';
 
 export async function GET() {
   const authResult = await requireUser();
   if ('error' in authResult) {
     return NextResponse.json({ error: authResult.error }, { status: authResult.status });
   }
+
+  await ensureDemoCard(authResult.userId);
 
   const cards = await prisma.paymentCard.findMany({
     where: { userId: authResult.userId },
@@ -25,11 +28,12 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const { number, brand } = body;
-  if (!number || typeof number !== 'string' || number.replace(/\D/g, '').length !== 16) {
+  const digits = typeof number === 'string' ? number.replace(/\D/g, '') : '';
+  if (digits.length < 13 || digits.length > 19) {
     return NextResponse.json({ error: 'Invalid card number' }, { status: 400 });
   }
 
-  const lastFour = number.slice(-4);
+  const lastFour = digits.slice(-4);
   const isFirst =
     (await prisma.paymentCard.count({ where: { userId: authResult.userId } })) === 0;
 

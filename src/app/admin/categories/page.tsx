@@ -2,10 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { AdminEntityForm } from '@/components/admin-entity-form';
-import { Button } from '@/components/ui/button';
+import { AdminEditPanel } from '@/components/admin-edit-panel';
 import { fetchAdminList } from '@/lib/fetch-json';
 
-type Category = { id: string; name: string; slug: string; sortOrder: number };
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  image: string | null;
+  sortOrder: number;
+};
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -23,23 +29,31 @@ export default function AdminCategoriesPage() {
       <h1 className="mb-8 text-2xl font-bold">CMS: Категории</h1>
       <div className="mb-8 space-y-3">
         {categories.map((category) => (
-          <div key={category.id} className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div>
-              <p className="font-medium">{category.name}</p>
-              <p className="text-sm text-muted-foreground">{category.slug}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                if (!confirm('Удалить?')) return;
-                await fetch(`/api/admin/categories/${category.id}`, { method: 'DELETE' });
-                reload();
-              }}
-            >
-              Удалить
-            </Button>
-          </div>
+          <AdminEditPanel
+            key={category.id}
+            title={category.name}
+            subtitle={category.slug}
+            imageUrl={category.image}
+            submitUrl={`/api/admin/categories/${category.id}`}
+            initialValues={{
+              name: category.name,
+              slug: category.slug,
+              image: category.image ?? '',
+              sortOrder: category.sortOrder,
+            }}
+            fields={[
+              { name: 'name', label: 'Название' },
+              { name: 'slug', label: 'Slug' },
+              { name: 'image', label: 'URL изображения' },
+              { name: 'sortOrder', label: 'Порядок', type: 'number' },
+            ]}
+            onSaved={reload}
+            onDelete={async () => {
+              if (!confirm('Удалить?')) return;
+              await fetch(`/api/admin/categories/${category.id}`, { method: 'DELETE' });
+              reload();
+            }}
+          />
         ))}
       </div>
       <AdminEntityForm
@@ -49,6 +63,7 @@ export default function AdminCategoriesPage() {
         fields={[
           { name: 'name', label: 'Название' },
           { name: 'slug', label: 'Slug' },
+          { name: 'image', label: 'URL изображения' },
           { name: 'sortOrder', label: 'Порядок', type: 'number' },
         ]}
         initialValues={{ sortOrder: 0 }}
