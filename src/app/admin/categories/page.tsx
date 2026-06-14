@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AdminEntityForm } from '@/components/admin-entity-form';
-import { AdminEditPanel } from '@/components/admin-edit-panel';
-import { fetchAdminList } from '@/lib/fetch-json';
+import { AdminCmsList } from '@/components/admin/admin-cms-list';
+import type { AdminField } from '@/components/admin/admin-entity-form';
+import { adminDelete, useAdminList } from '@/hooks/use-admin-list';
 
 type Category = {
   id: string;
@@ -13,61 +12,56 @@ type Category = {
   sortOrder: number;
 };
 
+const CATEGORY_FIELDS: AdminField[] = [
+  { name: 'name', label: 'Название' },
+  { name: 'slug', label: 'Slug' },
+  { name: 'image', label: 'Иконка (URL)', type: 'image' },
+  { name: 'sortOrder', label: 'Порядок', type: 'number' },
+];
+
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  async function reload() {
-    setCategories(await fetchAdminList<Category>('/api/admin/categories'));
-  }
-
-  useEffect(() => {
-    reload().catch(() => {});
-  }, []);
+  const { items, loading, error, reload } = useAdminList<Category>('/api/admin/categories');
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-2xl font-bold">CMS: Категории</h1>
-      <div className="mb-8 space-y-3">
-        {categories.map((category) => (
-          <AdminEditPanel
-            key={category.id}
-            title={category.name}
-            subtitle={category.slug}
-            imageUrl={category.image}
-            submitUrl={`/api/admin/categories/${category.id}`}
-            initialValues={{
-              name: category.name,
-              slug: category.slug,
-              image: category.image ?? '',
-              sortOrder: category.sortOrder,
-            }}
-            fields={[
-              { name: 'name', label: 'Название' },
-              { name: 'slug', label: 'Slug' },
-              { name: 'image', label: 'URL изображения' },
-              { name: 'sortOrder', label: 'Порядок', type: 'number' },
-            ]}
-            onSaved={reload}
-            onDelete={async () => {
-              if (!confirm('Удалить?')) return;
-              await fetch(`/api/admin/categories/${category.id}`, { method: 'DELETE' });
-              reload();
-            }}
-          />
-        ))}
-      </div>
-      <AdminEntityForm
-        title="Добавить категорию"
-        submitUrl="/api/admin/categories"
-        onSuccess={reload}
-        fields={[
-          { name: 'name', label: 'Название' },
-          { name: 'slug', label: 'Slug' },
-          { name: 'image', label: 'URL изображения' },
-          { name: 'sortOrder', label: 'Порядок', type: 'number' },
-        ]}
-        initialValues={{ sortOrder: 0 }}
-      />
-    </div>
+    <AdminCmsList
+      title="Категории"
+      description="Пицца, суши, бургеры и другие разделы меню"
+      items={items}
+      loading={loading}
+      error={error}
+      onRetry={reload}
+      searchPlaceholder="Поиск категории..."
+      searchFilter={(item, q) =>
+        item.name.toLowerCase().includes(q) || item.slug.toLowerCase().includes(q)
+      }
+      getRow={(item) => ({
+        item,
+        title: item.name,
+        subtitle: item.slug,
+        imageUrl: item.image,
+        badge: `#${item.sortOrder}`,
+        badgeVariant: 'muted',
+      })}
+      editFields={CATEGORY_FIELDS}
+      getInitialValues={(item) => ({
+        name: item.name,
+        slug: item.slug,
+        image: item.image ?? '',
+        sortOrder: item.sortOrder,
+      })}
+      getSubmitUrl={(item) => `/api/admin/categories/${item.id}`}
+      onSaved={reload}
+      onDelete={async (item) => {
+        const result = await adminDelete(`/api/admin/categories/${item.id}`);
+        if (!result.ok) alert(result.error);
+        else reload();
+      }}
+      createConfig={{
+        title: 'Новая категория',
+        submitUrl: '/api/admin/categories',
+        fields: CATEGORY_FIELDS,
+        initialValues: { sortOrder: 0 },
+      }}
+    />
   );
 }

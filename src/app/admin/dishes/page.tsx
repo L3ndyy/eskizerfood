@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AdminEntityForm } from '@/components/admin-entity-form';
-import { AdminEditPanel } from '@/components/admin-edit-panel';
-import { fetchAdminList } from '@/lib/fetch-json';
+import { useMemo } from 'react';
+import { AdminCmsList } from '@/components/admin/admin-cms-list';
+import type { AdminField } from '@/components/admin/admin-entity-form';
+import { adminDelete, useAdminList } from '@/hooks/use-admin-list';
+import { formatPrice } from '@/lib/utils';
 
 type Dish = {
   id: string;
@@ -21,74 +22,110 @@ type Dish = {
   category: { name: string } | null;
 };
 
-export default function AdminDishesPage() {
-  const [dishes, setDishes] = useState<Dish[]>([]);
+type Option = { id: string; name: string };
 
-  async function reload() {
-    setDishes(await fetchAdminList<Dish>('/api/admin/dishes'));
+export default function AdminDishesPage() {
+  const dishes = useAdminList<Dish>('/api/admin/dishes');
+  const restaurants = useAdminList<Option>('/api/admin/restaurants');
+  const categories = useAdminList<Option>('/api/admin/categories');
+
+  const loading = dishes.loading || restaurants.loading || categories.loading;
+  const error = dishes.error || restaurants.error || categories.error;
+
+  const restaurantOptions = useMemo(
+    () => restaurants.items.map((r) => ({ value: r.id, label: r.name })),
+    [restaurants.items]
+  );
+  const categoryOptions = useMemo(
+    () => categories.items.map((c) => ({ value: c.id, label: c.name })),
+    [categories.items]
+  );
+
+  const dishFields = useMemo(
+    (): AdminField[] => [
+      { name: 'name', label: 'Название' },
+      { name: 'slug', label: 'Slug' },
+      { name: 'description', label: 'Описание', type: 'textarea' },
+      { name: 'price', label: 'Цена, ₽', type: 'number' },
+      { name: 'image', label: 'Фото (URL)', type: 'image' },
+      { name: 'weight', label: 'Вес / объём' },
+      {
+        name: 'restaurantId',
+        label: 'Ресторан',
+        type: 'select',
+        options: restaurantOptions,
+      },
+      {
+        name: 'categoryId',
+        label: 'Категория',
+        type: 'select',
+        options: categoryOptions,
+      },
+      { name: 'sortOrder', label: 'Порядок сортировки', type: 'number' },
+      { name: 'isAvailable', label: 'Доступно для заказа', type: 'checkbox' },
+    ],
+    [restaurantOptions, categoryOptions]
+  );
+
+  function reloadAll() {
+    void dishes.reload();
+    void restaurants.reload();
+    void categories.reload();
   }
 
-  useEffect(() => {
-    reload().catch(() => {});
-  }, []);
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-2xl font-bold">CMS: Блюда</h1>
-      <div className="mb-8 space-y-3">
-        {dishes.map((dish) => (
-          <AdminEditPanel
-            key={dish.id}
-            title={dish.name}
-            subtitle={`${dish.restaurant?.name ?? '—'} • ${dish.category?.name ?? '—'} • ${dish.price} ₽`}
-            imageUrl={dish.image}
-            submitUrl={`/api/admin/dishes/${dish.id}`}
-            initialValues={{
-              name: dish.name,
-              slug: dish.slug,
-              description: dish.description ?? '',
-              price: dish.price,
-              image: dish.image ?? '',
-              weight: dish.weight ?? '',
-              categoryId: dish.categoryId,
-              restaurantId: dish.restaurantId,
-              isAvailable: dish.isAvailable,
-              sortOrder: dish.sortOrder,
-            }}
-            fields={[
-              { name: 'name', label: 'Название' },
-              { name: 'slug', label: 'Slug' },
-              { name: 'description', label: 'Описание' },
-              { name: 'price', label: 'Цена', type: 'number' },
-              { name: 'image', label: 'URL изображения' },
-              { name: 'weight', label: 'Вес' },
-              { name: 'restaurantId', label: 'Restaurant ID' },
-              { name: 'categoryId', label: 'Category ID' },
-              { name: 'sortOrder', label: 'Порядок', type: 'number' },
-              { name: 'isAvailable', label: 'Доступно', type: 'checkbox' },
-            ]}
-            onSaved={reload}
-            onDelete={async () => {
-              if (!confirm('Удалить?')) return;
-              await fetch(`/api/admin/dishes/${dish.id}`, { method: 'DELETE' });
-              reload();
-            }}
-          />
-        ))}
-      </div>
-      <AdminEntityForm
-        title="Добавить блюдо"
-        submitUrl="/api/admin/dishes"
-        onSuccess={reload}
-        fields={[
-          { name: 'name', label: 'Название' },
-          { name: 'slug', label: 'Slug' },
-          { name: 'price', label: 'Цена', type: 'number' },
-          { name: 'restaurantId', label: 'Restaurant ID' },
-          { name: 'categoryId', label: 'Category ID' },
-          { name: 'image', label: 'URL изображения' },
-        ]}
-      />
-    </div>
+    <AdminCmsList
+      title="Блюда"
+      description="Меню всех ресторанов — цены, фото, доступность"
+      items={dishes.items}
+      loading={loading}
+      error={error}
+      onRetry={reloadAll}
+      searchPlaceholder="Поиск по названию, ресторану..."
+      searchFilter={(item, q) =>
+        item.name.toLowerCase().includes(q) ||
+        (item.restaurant?.name ?? '').toLowerCase().includes(q) ||
+        (item.category?.name ?? '').toLowerCase().includes(q)
+      }
+      getRow={(item) => ({
+        item,
+        title: item.name,
+        subtitle: `${item.restaurant?.name ?? '—'} • ${item.category?.name ?? '—'}`,
+        imageUrl: item.image,
+        badge: formatPrice(item.price),
+        badgeVariant: item.isAvailable ? 'default' : 'warning',
+      })}
+      editFields={dishFields}
+      getInitialValues={(item) => ({
+        name: item.name,
+        slug: item.slug,
+        description: item.description ?? '',
+        price: item.price,
+        image: item.image ?? '',
+        weight: item.weight ?? '',
+        restaurantId: item.restaurantId,
+        categoryId: item.categoryId,
+        isAvailable: item.isAvailable,
+        sortOrder: item.sortOrder,
+      })}
+      getSubmitUrl={(item) => `/api/admin/dishes/${item.id}`}
+      onSaved={reloadAll}
+      onDelete={async (item) => {
+        const result = await adminDelete(`/api/admin/dishes/${item.id}`);
+        if (!result.ok) alert(result.error);
+        else reloadAll();
+      }}
+      createConfig={{
+        title: 'Новое блюдо',
+        submitUrl: '/api/admin/dishes',
+        fields: dishFields.filter((f) => f.name !== 'isAvailable'),
+        initialValues: {
+          price: 299,
+          sortOrder: 0,
+          restaurantId: restaurantOptions[0]?.value ?? '',
+          categoryId: categoryOptions[0]?.value ?? '',
+        },
+      }}
+    />
   );
 }

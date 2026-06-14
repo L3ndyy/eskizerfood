@@ -1,70 +1,107 @@
 import Link from 'next/link';
+import {
+  UtensilsCrossed,
+  ShoppingBag,
+  Users,
+  MessageCircle,
+  ChefHat,
+  Tags,
+  ImageIcon,
+} from 'lucide-react';
 import { prisma } from '@/lib/prisma';
-import { UtensilsCrossed, ShoppingBag, Users, MessageCircle } from 'lucide-react';
 
 export default async function AdminPage() {
-  const [restaurantsCount, ordersCount, usersCount] = await Promise.all([
-    prisma.restaurant.count(),
-    prisma.order.count(),
-    prisma.user.count(),
-  ]);
+  const [restaurantsCount, dishesCount, categoriesCount, bannersCount, ordersCount, usersCount] =
+    await Promise.all([
+      prisma.restaurant.count(),
+      prisma.dish.count(),
+      prisma.category.count(),
+      prisma.siteBanner.count(),
+      prisma.order.count(),
+      prisma.user.count(),
+    ]);
+
+  const cards = [
+    {
+      href: '/admin/restaurants/cms',
+      label: 'Рестораны',
+      count: restaurantsCount,
+      icon: UtensilsCrossed,
+      desc: 'Название, фото, доставка',
+    },
+    {
+      href: '/admin/dishes',
+      label: 'Блюда',
+      count: dishesCount,
+      icon: ChefHat,
+      desc: 'Меню и цены',
+    },
+    {
+      href: '/admin/categories',
+      label: 'Категории',
+      count: categoriesCount,
+      icon: Tags,
+      desc: 'Разделы меню',
+    },
+    {
+      href: '/admin/banners',
+      label: 'Баннеры',
+      count: bannersCount,
+      icon: ImageIcon,
+      desc: 'Промо на главной',
+    },
+    {
+      href: '/admin/orders',
+      label: 'Заказы',
+      count: ordersCount,
+      icon: ShoppingBag,
+      desc: 'Статусы доставки',
+    },
+    {
+      href: '/admin/users',
+      label: 'Пользователи',
+      count: usersCount,
+      icon: Users,
+      desc: 'Аккаунты клиентов',
+    },
+    {
+      href: '/admin/support',
+      label: 'Поддержка',
+      count: null,
+      icon: MessageCircle,
+      desc: 'Чат с клиентами',
+    },
+  ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-2xl font-bold">Панель управления</h1>
+    <div className="mx-auto max-w-6xl">
+      <h1 className="text-2xl font-bold tracking-tight">Панель управления</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Редактируйте контент сайта, заказы и пользователей
+      </p>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Link
-          href="/admin/restaurants"
-          className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <UtensilsCrossed className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="font-semibold">Рестораны</p>
-            <p className="text-2xl font-bold">{restaurantsCount}</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/orders"
-          className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <ShoppingBag className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="font-semibold">Заказы</p>
-            <p className="text-2xl font-bold">{ordersCount}</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/support"
-          className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <MessageCircle className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="font-semibold">Поддержка</p>
-            <p className="text-sm text-muted-foreground">Ответы клиентам</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/users"
-          className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Users className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="font-semibold">Пользователи</p>
-            <p className="text-2xl font-bold">{usersCount}</p>
-          </div>
-        </Link>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Icon className="h-5 w-5" />
+                </div>
+                {card.count !== null ? (
+                  <span className="text-2xl font-bold tabular-nums">{card.count}</span>
+                ) : null}
+              </div>
+              <p className="mt-4 font-semibold">{card.label}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{card.desc}</p>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

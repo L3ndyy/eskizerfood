@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AdminEntityForm } from '@/components/admin-entity-form';
-import { AdminEditPanel } from '@/components/admin-edit-panel';
-import { fetchAdminList } from '@/lib/fetch-json';
+import { AdminCmsList } from '@/components/admin/admin-cms-list';
+import type { AdminField } from '@/components/admin/admin-entity-form';
+import { adminDelete, useAdminList } from '@/hooks/use-admin-list';
 
 type Banner = {
   id: string;
@@ -15,67 +14,61 @@ type Banner = {
   sortOrder: number;
 };
 
+const BANNER_FIELDS: AdminField[] = [
+  { name: 'title', label: 'Заголовок' },
+  { name: 'subtitle', label: 'Подзаголовок' },
+  { name: 'image', label: 'Изображение (URL)', type: 'image' },
+  { name: 'link', label: 'Ссылка', placeholder: '/restaurant/dodo-pizza' },
+  { name: 'sortOrder', label: 'Порядок', type: 'number' },
+  { name: 'isActive', label: 'Показывать на главной', type: 'checkbox' },
+];
+
 export default function AdminBannersPage() {
-  const [banners, setBanners] = useState<Banner[]>([]);
-
-  async function reload() {
-    setBanners(await fetchAdminList<Banner>('/api/admin/banners'));
-  }
-
-  useEffect(() => {
-    reload().catch(() => {});
-  }, []);
+  const { items, loading, error, reload } = useAdminList<Banner>('/api/admin/banners');
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-2xl font-bold">CMS: Баннеры</h1>
-      <div className="mb-8 space-y-3">
-        {banners.map((banner) => (
-          <AdminEditPanel
-            key={banner.id}
-            title={banner.title}
-            subtitle={banner.subtitle ?? undefined}
-            imageUrl={banner.image}
-            submitUrl={`/api/admin/banners/${banner.id}`}
-            initialValues={{
-              title: banner.title,
-              subtitle: banner.subtitle ?? '',
-              image: banner.image,
-              link: banner.link ?? '',
-              sortOrder: banner.sortOrder,
-              isActive: banner.isActive,
-            }}
-            fields={[
-              { name: 'title', label: 'Заголовок' },
-              { name: 'subtitle', label: 'Подзаголовок' },
-              { name: 'image', label: 'URL изображения' },
-              { name: 'link', label: 'Ссылка' },
-              { name: 'sortOrder', label: 'Порядок', type: 'number' },
-              { name: 'isActive', label: 'Активен', type: 'checkbox' },
-            ]}
-            onSaved={reload}
-            onDelete={async () => {
-              if (!confirm('Удалить?')) return;
-              await fetch(`/api/admin/banners/${banner.id}`, { method: 'DELETE' });
-              reload();
-            }}
-          />
-        ))}
-      </div>
-      <AdminEntityForm
-        title="Добавить баннер"
-        submitUrl="/api/admin/banners"
-        onSuccess={reload}
-        fields={[
-          { name: 'title', label: 'Заголовок' },
-          { name: 'subtitle', label: 'Подзаголовок' },
-          { name: 'image', label: 'URL изображения' },
-          { name: 'link', label: 'Ссылка' },
-          { name: 'sortOrder', label: 'Порядок', type: 'number' },
-          { name: 'isActive', label: 'Активен', type: 'checkbox' },
-        ]}
-        initialValues={{ sortOrder: 0, isActive: true }}
-      />
-    </div>
+    <AdminCmsList
+      title="Баннеры"
+      description="Промо-блоки на главной странице"
+      items={items}
+      loading={loading}
+      error={error}
+      onRetry={reload}
+      searchPlaceholder="Поиск баннера..."
+      searchFilter={(item, q) =>
+        item.title.toLowerCase().includes(q) ||
+        (item.subtitle ?? '').toLowerCase().includes(q)
+      }
+      getRow={(item) => ({
+        item,
+        title: item.title,
+        subtitle: item.subtitle ?? item.link ?? undefined,
+        imageUrl: item.image,
+        badge: item.isActive ? 'Активен' : 'Скрыт',
+        badgeVariant: item.isActive ? 'success' : 'muted',
+      })}
+      editFields={BANNER_FIELDS}
+      getInitialValues={(item) => ({
+        title: item.title,
+        subtitle: item.subtitle ?? '',
+        image: item.image,
+        link: item.link ?? '',
+        sortOrder: item.sortOrder,
+        isActive: item.isActive,
+      })}
+      getSubmitUrl={(item) => `/api/admin/banners/${item.id}`}
+      onSaved={reload}
+      onDelete={async (item) => {
+        const result = await adminDelete(`/api/admin/banners/${item.id}`);
+        if (!result.ok) alert(result.error);
+        else reload();
+      }}
+      createConfig={{
+        title: 'Новый баннер',
+        submitUrl: '/api/admin/banners',
+        fields: BANNER_FIELDS,
+        initialValues: { sortOrder: 0, isActive: true },
+      }}
+    />
   );
 }
