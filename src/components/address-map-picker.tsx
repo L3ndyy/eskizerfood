@@ -9,7 +9,16 @@ import { Button } from '@/components/ui/button';
 import { formatShortAddress } from '@/lib/format-address';
 import 'leaflet/dist/leaflet.css';
 
+// Убираем флаг из стандартной подписи Leaflet (prefix с SVG)
+L.Control.Attribution.prototype.options.prefix = '';
+
 const DEFAULT_CENTER: [number, number] = [55.7558, 37.6173];
+
+const MAP_TILES = {
+  url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  attribution:
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+};
 
 const markerIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -51,6 +60,14 @@ function MapRecenter({ center, zoom }: { center: [number, number]; zoom: number 
   useEffect(() => {
     map.setView(center, zoom, { animate: true });
   }, [center, zoom, map]);
+  return null;
+}
+
+function CleanAttribution() {
+  const map = useMap();
+  useEffect(() => {
+    map.attributionControl?.setPrefix('');
+  }, [map]);
   return null;
 }
 
@@ -187,10 +204,8 @@ export function AddressMapPicker({
           scrollWheelZoom={false}
           className="h-full w-full"
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <TileLayer attribution={MAP_TILES.attribution} url={MAP_TILES.url} />
+          <CleanAttribution />
           {hasPin && <Marker position={position} icon={markerIcon} />}
           <MapRecenter center={position} zoom={hasPin ? 16 : 12} />
           <MapClickHandler onPick={handleMapPick} />
