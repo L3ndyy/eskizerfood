@@ -14,6 +14,7 @@
     "db:vercel:push": "node scripts/neon-cli-env.mjs push",
     "db:vercel:seed": "cross-env PRISMA_PROVIDER=postgresql prisma generate --schema=prisma/schema.postgresql.prisma && cross-env PRISMA_PROVIDER=postgresql npx tsx prisma/seed.ts",
     "db:sql": "npx tsx scripts/generate-timeweb-sql.ts",
+    "db:neon:push-sql": "npx tsx scripts/generate-neon-push-sql.ts",
     "db:neon:seed-sql": "npx tsx scripts/generate-neon-seed-sql.ts",
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",

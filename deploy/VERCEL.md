@@ -41,24 +41,21 @@ git push -u origin main
 ### Вариант A — Neon SQL Editor (если `npm run db:vercel:push` даёт P1001)
 
 1. Откройте [console.neon.tech](https://console.neon.tech) → ваш проект → **SQL Editor**.
-2. На ПК откройте файл `prisma/.neon-push.sql` (или сгенерируйте заново):
 
-```powershell
-cd "C:\Users\nikik\OneDrive\Desktop\eskizerfood"
-npx cross-env PRISMA_PROVIDER=postgresql prisma migrate diff --from-empty --to-schema prisma/schema.postgresql.prisma --script -o prisma/.neon-push.sql
-```
+2. **Схема** — файл `prisma/.neon-push.sql` (можно перегенерировать: `npm run db:neon:push-sql`).
 
-3. Скопируйте **весь** текст из `prisma/.neon-push.sql` → вставьте в SQL Editor → **Run**.
-4. Если часть уже создавалась раньше и видите `already exists` — это нормально, продолжайте или очистите схему:
+   Скрипт **безопасен для повторного запуска**: типы и таблицы пропускаются, если уже есть.
+   Скопируйте **весь** текст → SQL Editor → **Run**.
 
-```sql
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
-```
+   | Ситуация | Что делать |
+   |----------|------------|
+   | Пустая БД или после `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` | `.neon-push.sql` → `.neon-seed.sql` |
+   | Ошибка `type "PaymentStatus" already exists` (старая версия скрипта) | Обновите `.neon-push.sql` из репозитория или `npm run db:neon:push-sql`, затем **Run** снова |
+   | Таблицы уже есть, рестораны пропали | **Не** сбрасывайте схему — только `.neon-seed.sql` |
+   | Групповой заказ 500, старая схема GroupCartItem | `.neon-migrate-multi-group.sql` или `.neon-fix-group-order.sql` |
+   | Групповой заказ: «таблицы не созданы» | `.neon-fix-group-order.sql` |
 
-   …и снова выполните `.neon-push.sql`.
-
-5. Заполните тестовыми данными — **Neon SQL Editor** (если `npm run db:vercel:seed` не работает с ПК):
+3. **Данные** — если рестораны/блюда пустые:
 
 ```powershell
 npm run db:neon:seed-sql
@@ -66,9 +63,12 @@ npm run db:neon:seed-sql
 
 Откройте `prisma/.neon-seed.sql` → скопируйте всё → SQL Editor → **Run**.
 
-6. **Мультиресторанный групповой заказ** — выполните миграцию (один раз):
+4. **Мультиресторанный групповой заказ** (только если БД создавалась до обновления схемы):
 
-Файл `prisma/.neon-migrate-multi-group.sql` → SQL Editor → **Run**.
+Файл `prisma/.neon-migrate-multi-group.sql` или `prisma/.neon-fix-group-order.sql` → SQL Editor → **Run**.
+
+5. **Проверка** (после деплоя с `/api/db/status`): откройте  
+   `https://ваш-проект.vercel.app/api/db/status` — должно быть `"groupOrderReady": true` и `"restaurantCount" > 0`.
 
 Или через терминал (если подключение работает):
 

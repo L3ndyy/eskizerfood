@@ -6,11 +6,7 @@ let migrationOk = false;
 
 async function tableExists(name: string) {
   const rows = await prisma.$queryRaw<{ exists: boolean }[]>`
-    SELECT EXISTS (
-      SELECT 1
-      FROM information_schema.tables
-      WHERE table_schema = 'public' AND table_name = ${name}
-    ) AS "exists"
+    SELECT to_regclass(${`public."${name}"`}) IS NOT NULL AS "exists"
   `;
   return Boolean(rows[0]?.exists);
 }
@@ -138,4 +134,56 @@ export async function createGroupCartItem(
       ${item.dishName}, ${item.price}, ${item.quantity}
     )
   `;
+}
+
+type CreateSessionParams = {
+  token: string;
+  initiatorUserId: string;
+  restaurantId: string;
+  expiresAt: Date;
+  displayName: string;
+};
+
+export async function createGroupSessionWithParticipant(params: CreateSessionParams) {
+  try {
+    const session = await prisma.groupSession.create({
+      data: {
+        token: params.token,
+        initiatorUserId: params.initiatorUserId,
+        restaurantId: params.restaurantId,
+        expiresAt: params.expiresAt,
+        participants: {
+          create: {
+            userId: params.initiatorUserId,
+            displayName: params.displayName,
+          },
+        },
+      },
+    });
+    return session;
+  } catch (error) {
+    console.warn('createGroupSessionWithParticipant prisma fallback:', error);
+  }
+
+  const sessionId = randomUUID();
+  const participantId = randomUUID();
+
+  await prisma.$executeRaw`
+    INSERT INTO "GroupSession" (
+      "id", "token", "initiatorUserId", "restaurantId", "expiresAt", "status", "createdAt"
+    ) VALUES (
+      ${sessionId}, ${params.token}, ${params.initiatorUserId}, ${params.restaurantId},
+      ${params.expiresAt}, CAST('ACTIVE' AS "GroupSessionStatus"), NOW()
+    )
+  `;
+
+  await prisma.$executeRaw`
+    INSERT INTO "GroupParticipant" (
+      "id", "groupSessionId", "userId", "displayName"
+    ) VALUES (
+      ${participantId}, ${sessionId}, ${params.initiatorUserId}, ${params.displayName}
+    )
+  `;
+
+  return { id: sessionId, token: params.token };
 }

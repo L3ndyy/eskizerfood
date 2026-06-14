@@ -1,23 +1,27 @@
+-- FoodExpress schema для Neon PostgreSQL
+-- Безопасно запускать повторно (IF NOT EXISTS / duplicate_object)
+-- Neon → SQL Editor → Run
+
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateEnum
-CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'FAILED');
+DO $$ BEGIN CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'FAILED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateEnum
-CREATE TYPE "PaymentMethod" AS ENUM ('CARD', 'CASH', 'SPLIT');
+DO $$ BEGIN CREATE TYPE "PaymentMethod" AS ENUM ('CARD', 'CASH', 'SPLIT'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateEnum
-CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'DELIVERED', 'CANCELLED');
+DO $$ BEGIN CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'DELIVERED', 'CANCELLED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateEnum
-CREATE TYPE "GroupPaymentMode" AS ENUM ('CENTRALIZED', 'SPLIT');
+DO $$ BEGIN CREATE TYPE "GroupPaymentMode" AS ENUM ('CENTRALIZED', 'SPLIT'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateEnum
-CREATE TYPE "GroupSessionStatus" AS ENUM ('ACTIVE', 'CLOSED', 'EXPIRED', 'COMPLETED');
+DO $$ BEGIN CREATE TYPE "GroupSessionStatus" AS ENUM ('ACTIVE', 'CLOSED', 'EXPIRED', 'COMPLETED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateTable
-CREATE TABLE "Account" (
+CREATE TABLE IF NOT EXISTS "Account" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -35,7 +39,7 @@ CREATE TABLE "Account" (
 );
 
 -- CreateTable
-CREATE TABLE "Session" (
+CREATE TABLE IF NOT EXISTS "Session" (
     "id" TEXT NOT NULL,
     "sessionToken" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -45,7 +49,7 @@ CREATE TABLE "Session" (
 );
 
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL,
     "name" TEXT,
     "email" TEXT,
@@ -62,7 +66,7 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
-CREATE TABLE "SupportConversation" (
+CREATE TABLE IF NOT EXISTS "SupportConversation" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -72,7 +76,7 @@ CREATE TABLE "SupportConversation" (
 );
 
 -- CreateTable
-CREATE TABLE "SupportMessage" (
+CREATE TABLE IF NOT EXISTS "SupportMessage" (
     "id" TEXT NOT NULL,
     "conversationId" TEXT NOT NULL,
     "body" TEXT NOT NULL,
@@ -83,7 +87,7 @@ CREATE TABLE "SupportMessage" (
 );
 
 -- CreateTable
-CREATE TABLE "PaymentCard" (
+CREATE TABLE IF NOT EXISTS "PaymentCard" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "lastFour" TEXT NOT NULL,
@@ -95,7 +99,7 @@ CREATE TABLE "PaymentCard" (
 );
 
 -- CreateTable
-CREATE TABLE "UserAddress" (
+CREATE TABLE IF NOT EXISTS "UserAddress" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "address" TEXT NOT NULL,
@@ -110,7 +114,7 @@ CREATE TABLE "UserAddress" (
 );
 
 -- CreateTable
-CREATE TABLE "UserCartItem" (
+CREATE TABLE IF NOT EXISTS "UserCartItem" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "dishId" TEXT NOT NULL,
@@ -125,14 +129,14 @@ CREATE TABLE "UserCartItem" (
 );
 
 -- CreateTable
-CREATE TABLE "VerificationToken" (
+CREATE TABLE IF NOT EXISTS "VerificationToken" (
     "identifier" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "expires" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
-CREATE TABLE "Restaurant" (
+CREATE TABLE IF NOT EXISTS "Restaurant" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -154,7 +158,7 @@ CREATE TABLE "Restaurant" (
 );
 
 -- CreateTable
-CREATE TABLE "Category" (
+CREATE TABLE IF NOT EXISTS "Category" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -165,7 +169,7 @@ CREATE TABLE "Category" (
 );
 
 -- CreateTable
-CREATE TABLE "Dish" (
+CREATE TABLE IF NOT EXISTS "Dish" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -184,7 +188,7 @@ CREATE TABLE "Dish" (
 );
 
 -- CreateTable
-CREATE TABLE "Order" (
+CREATE TABLE IF NOT EXISTS "Order" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "restaurantId" TEXT NOT NULL,
@@ -207,7 +211,7 @@ CREATE TABLE "Order" (
 );
 
 -- CreateTable
-CREATE TABLE "OrderItem" (
+CREATE TABLE IF NOT EXISTS "OrderItem" (
     "id" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
     "dishId" TEXT NOT NULL,
@@ -218,7 +222,7 @@ CREATE TABLE "OrderItem" (
 );
 
 -- CreateTable
-CREATE TABLE "Favorite" (
+CREATE TABLE IF NOT EXISTS "Favorite" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "restaurantId" TEXT NOT NULL,
@@ -227,11 +231,11 @@ CREATE TABLE "Favorite" (
 );
 
 -- CreateTable
-CREATE TABLE "GroupSession" (
+CREATE TABLE IF NOT EXISTS "GroupSession" (
     "id" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "initiatorUserId" TEXT NOT NULL,
-    "restaurantId" TEXT NOT NULL,
+    "restaurantId" TEXT,
     "status" "GroupSessionStatus" NOT NULL DEFAULT 'ACTIVE',
     "paymentMode" "GroupPaymentMode",
     "expiresAt" TIMESTAMP(3) NOT NULL,
@@ -241,7 +245,7 @@ CREATE TABLE "GroupSession" (
 );
 
 -- CreateTable
-CREATE TABLE "GroupParticipant" (
+CREATE TABLE IF NOT EXISTS "GroupParticipant" (
     "id" TEXT NOT NULL,
     "groupSessionId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -253,7 +257,7 @@ CREATE TABLE "GroupParticipant" (
 );
 
 -- CreateTable
-CREATE TABLE "GroupCartItem" (
+CREATE TABLE IF NOT EXISTS "GroupCartItem" (
     "id" TEXT NOT NULL,
     "groupSessionId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -262,12 +266,14 @@ CREATE TABLE "GroupCartItem" (
     "price" INTEGER NOT NULL,
     "quantity" INTEGER NOT NULL,
     "modifiers" TEXT,
+    "restaurantId" TEXT NOT NULL,
+    "restaurantName" TEXT NOT NULL,
 
     CONSTRAINT "GroupCartItem_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "SiteBanner" (
+CREATE TABLE IF NOT EXISTS "SiteBanner" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "subtitle" TEXT,
@@ -282,148 +288,151 @@ CREATE TABLE "SiteBanner" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
+CREATE UNIQUE INDEX IF NOT EXISTS "Session_sessionToken_key" ON "Session"("sessionToken");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "SupportConversation_userId_key" ON "SupportConversation"("userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "SupportConversation_userId_key" ON "SupportConversation"("userId");
 
 -- CreateIndex
-CREATE INDEX "SupportMessage_conversationId_idx" ON "SupportMessage"("conversationId");
+CREATE INDEX IF NOT EXISTS "SupportMessage_conversationId_idx" ON "SupportMessage"("conversationId");
 
 -- CreateIndex
-CREATE INDEX "PaymentCard_userId_idx" ON "PaymentCard"("userId");
+CREATE INDEX IF NOT EXISTS "PaymentCard_userId_idx" ON "PaymentCard"("userId");
 
 -- CreateIndex
-CREATE INDEX "UserAddress_userId_idx" ON "UserAddress"("userId");
+CREATE INDEX IF NOT EXISTS "UserAddress_userId_idx" ON "UserAddress"("userId");
 
 -- CreateIndex
-CREATE INDEX "UserCartItem_userId_idx" ON "UserCartItem"("userId");
+CREATE INDEX IF NOT EXISTS "UserCartItem_userId_idx" ON "UserCartItem"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "UserCartItem_userId_dishId_key" ON "UserCartItem"("userId", "dishId");
+CREATE UNIQUE INDEX IF NOT EXISTS "UserCartItem_userId_dishId_key" ON "UserCartItem"("userId", "dishId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_token_key" ON "VerificationToken"("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
+CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Restaurant_slug_key" ON "Restaurant"("slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "Restaurant_slug_key" ON "Restaurant"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "Category_name_key" ON "Category"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "Category_slug_key" ON "Category"("slug");
 
 -- CreateIndex
-CREATE INDEX "Dish_restaurantId_idx" ON "Dish"("restaurantId");
+CREATE INDEX IF NOT EXISTS "Dish_restaurantId_idx" ON "Dish"("restaurantId");
 
 -- CreateIndex
-CREATE INDEX "Dish_categoryId_idx" ON "Dish"("categoryId");
+CREATE INDEX IF NOT EXISTS "Dish_categoryId_idx" ON "Dish"("categoryId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Dish_restaurantId_slug_key" ON "Dish"("restaurantId", "slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "Dish_restaurantId_slug_key" ON "Dish"("restaurantId", "slug");
 
 -- CreateIndex
-CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
+CREATE INDEX IF NOT EXISTS "OrderItem_orderId_idx" ON "OrderItem"("orderId");
 
 -- CreateIndex
-CREATE INDEX "Favorite_userId_idx" ON "Favorite"("userId");
+CREATE INDEX IF NOT EXISTS "Favorite_userId_idx" ON "Favorite"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Favorite_userId_restaurantId_key" ON "Favorite"("userId", "restaurantId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Favorite_userId_restaurantId_key" ON "Favorite"("userId", "restaurantId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "GroupSession_token_key" ON "GroupSession"("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "GroupSession_token_key" ON "GroupSession"("token");
 
 -- CreateIndex
-CREATE INDEX "GroupSession_initiatorUserId_idx" ON "GroupSession"("initiatorUserId");
+CREATE INDEX IF NOT EXISTS "GroupSession_initiatorUserId_idx" ON "GroupSession"("initiatorUserId");
 
 -- CreateIndex
-CREATE INDEX "GroupSession_restaurantId_idx" ON "GroupSession"("restaurantId");
+CREATE INDEX IF NOT EXISTS "GroupSession_restaurantId_idx" ON "GroupSession"("restaurantId");
 
 -- CreateIndex
-CREATE INDEX "GroupParticipant_groupSessionId_idx" ON "GroupParticipant"("groupSessionId");
+CREATE INDEX IF NOT EXISTS "GroupParticipant_groupSessionId_idx" ON "GroupParticipant"("groupSessionId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "GroupParticipant_groupSessionId_userId_key" ON "GroupParticipant"("groupSessionId", "userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "GroupParticipant_groupSessionId_userId_key" ON "GroupParticipant"("groupSessionId", "userId");
 
 -- CreateIndex
-CREATE INDEX "GroupCartItem_groupSessionId_idx" ON "GroupCartItem"("groupSessionId");
+CREATE INDEX IF NOT EXISTS "GroupCartItem_groupSessionId_idx" ON "GroupCartItem"("groupSessionId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "GroupCartItem_restaurantId_idx" ON "GroupCartItem"("restaurantId");
 
 -- AddForeignKey
-ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "SupportConversation" ADD CONSTRAINT "SupportConversation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "SupportConversation" ADD CONSTRAINT "SupportConversation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "SupportMessage" ADD CONSTRAINT "SupportMessage_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "SupportConversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "SupportMessage" ADD CONSTRAINT "SupportMessage_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "SupportConversation"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "PaymentCard" ADD CONSTRAINT "PaymentCard_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "PaymentCard" ADD CONSTRAINT "PaymentCard_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "UserAddress" ADD CONSTRAINT "UserAddress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "UserAddress" ADD CONSTRAINT "UserAddress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "UserCartItem" ADD CONSTRAINT "UserCartItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "UserCartItem" ADD CONSTRAINT "UserCartItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Dish" ADD CONSTRAINT "Dish_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Dish" ADD CONSTRAINT "Dish_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Dish" ADD CONSTRAINT "Dish_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Dish" ADD CONSTRAINT "Dish_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Order" ADD CONSTRAINT "Order_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_paymentCardId_fkey" FOREIGN KEY ("paymentCardId") REFERENCES "PaymentCard"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Order" ADD CONSTRAINT "Order_paymentCardId_fkey" FOREIGN KEY ("paymentCardId") REFERENCES "PaymentCard"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_groupSessionId_fkey" FOREIGN KEY ("groupSessionId") REFERENCES "GroupSession"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Order" ADD CONSTRAINT "Order_groupSessionId_fkey" FOREIGN KEY ("groupSessionId") REFERENCES "GroupSession"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_dishId_fkey" FOREIGN KEY ("dishId") REFERENCES "Dish"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_dishId_fkey" FOREIGN KEY ("dishId") REFERENCES "Dish"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "GroupSession" ADD CONSTRAINT "GroupSession_initiatorUserId_fkey" FOREIGN KEY ("initiatorUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "GroupSession" ADD CONSTRAINT "GroupSession_initiatorUserId_fkey" FOREIGN KEY ("initiatorUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "GroupSession" ADD CONSTRAINT "GroupSession_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "GroupSession" ADD CONSTRAINT "GroupSession_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "GroupParticipant" ADD CONSTRAINT "GroupParticipant_groupSessionId_fkey" FOREIGN KEY ("groupSessionId") REFERENCES "GroupSession"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "GroupParticipant" ADD CONSTRAINT "GroupParticipant_groupSessionId_fkey" FOREIGN KEY ("groupSessionId") REFERENCES "GroupSession"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "GroupParticipant" ADD CONSTRAINT "GroupParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "GroupParticipant" ADD CONSTRAINT "GroupParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "GroupCartItem" ADD CONSTRAINT "GroupCartItem_groupSessionId_fkey" FOREIGN KEY ("groupSessionId") REFERENCES "GroupSession"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "GroupCartItem" ADD CONSTRAINT "GroupCartItem_groupSessionId_fkey" FOREIGN KEY ("groupSessionId") REFERENCES "GroupSession"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "GroupCartItem" ADD CONSTRAINT "GroupCartItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "GroupCartItem" ADD CONSTRAINT "GroupCartItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;

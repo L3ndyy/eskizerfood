@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/server/require-admin';
 import {
   createGroupCartItem,
+  createGroupSessionWithParticipant,
   ensureGroupOrderSchema,
   getAnchorRestaurantId,
   groupOrderTablesExist,
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            'Таблицы группового заказа не найдены. В Neon SQL Editor выполните prisma/.neon-push.sql',
+            'Таблицы группового заказа не найдены. В Neon SQL Editor выполните prisma/.neon-fix-group-order.sql',
         },
         { status: 503 }
       );
@@ -87,6 +88,16 @@ export async function POST(request: Request) {
       select: { name: true, email: true },
     });
 
+    if (!user) {
+      return NextResponse.json(
+        {
+          error:
+            'Пользователь не найден в базе. Выйдите из аккаунта и войдите снова (admin@food.ru / admin123 после seed).',
+        },
+        { status: 401 }
+      );
+    }
+
     const preparedItems: Array<{
       userId: string;
       dishId: string;
@@ -117,19 +128,12 @@ export async function POST(request: Request) {
       }
     }
 
-    const session = await prisma.groupSession.create({
-      data: {
-        token,
-        initiatorUserId: authResult.userId,
-        restaurantId: anchorRestaurantId,
-        expiresAt,
-        participants: {
-          create: {
-            userId: authResult.userId,
-            displayName: user?.name || user?.email || 'Инициатор',
-          },
-        },
-      },
+    const session = await createGroupSessionWithParticipant({
+      token,
+      initiatorUserId: authResult.userId,
+      restaurantId: anchorRestaurantId,
+      expiresAt,
+      displayName: user.name || user.email || 'Инициатор',
     });
 
     for (const item of preparedItems) {
@@ -145,12 +149,15 @@ export async function POST(request: Request) {
     const detail = error instanceof Error ? error.message : String(error);
 
     let message = 'Ошибка создания группового заказа';
-    if (/GroupSession|does not exist|42P01/i.test(detail)) {
-      message = 'Таблицы не созданы — выполните prisma/.neon-push.sql в Neon SQL Editor';
-    } else if (/restaurantId|column/i.test(detail)) {
-      message = 'Обновите БД — выполните prisma/.neon-migrate-multi-group.sql в Neon SQL Editor';
-    } else if (/Foreign key|23503/i.test(detail)) {
-      message = 'Нет ресторанов в базе — выполните prisma/.neon-seed.sql';
+    if (/42P01|relation .* does not exist/i.test(detail)) {
+      message =
+        'Таблицы группового заказа не найдены — выполните prisma/.neon-fix-group-order.sql в Neon SQL Editor';
+    } else if (/column|restaurantId|restaurantName/i.test(detail)) {
+      message =
+        'Схема устарела — выполните prisma/.neon-fix-group-order.sql в Neon SQL Editor';
+    } else if (/Foreign key|23503|initiatorUserId/i.test(detail)) {
+      message =
+        'Пользователь или ресторан не найден — выполните prisma/.neon-seed.sql и войдите заново';
     }
 
     return NextResponse.json({ error: message, detail }, { status: 500 });

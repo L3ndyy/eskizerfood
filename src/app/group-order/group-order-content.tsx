@@ -31,7 +31,8 @@ export default function GroupOrderContent() {
       });
       const data = await parseJsonResponse<{ joinUrl?: string; error?: string }>(res);
       if (!res.ok || !data?.joinUrl) {
-        throw new Error(data?.error || 'Ошибка создания');
+        const extra = data && 'detail' in data && typeof data.detail === 'string' ? `\n\n${data.detail}` : '';
+        throw new Error((data?.error || 'Ошибка создания') + extra);
       }
       sessionStorage.setItem('groupOrderToken', data.joinUrl.split('/').pop() ?? '');
       router.push(data.joinUrl);
