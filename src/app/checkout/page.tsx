@@ -38,6 +38,7 @@ export default function CheckoutPage() {
   const [phoneError, setPhoneError] = useState('');
   const [addressError, setAddressError] = useState('');
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [addressesLoaded, setAddressesLoaded] = useState(false);
 
   const total = getTotal();
 
@@ -77,7 +78,8 @@ export default function CheckoutPage() {
           setLng(defaultAddress.lng ?? undefined);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setAddressesLoaded(true));
   }, [session?.user]);
 
   if (status === 'loading' || status === 'unauthenticated' || items.length === 0) {
@@ -103,8 +105,8 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (!restaurantId || items.length === 0) return;
 
-    if (address.trim().length < 10) {
-      setAddressError('Введите полный адрес доставки');
+    if (address.trim().length < 3) {
+      setAddressError('Укажите улицу и дом');
       return;
     }
     if (!lat || !lng) {
@@ -163,56 +165,54 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium">Адрес доставки</label>
-          <div className="mt-2">
-            <AddressMapPicker
-              address={address}
-              lat={lat}
-              lng={lng}
-              error={addressError}
-              onChange={(value) => {
-                setAddress(value.address);
-                setLat(value.lat);
-                setLng(value.lng);
-                if (value.city) setCity(value.city);
-                if (addressError) setAddressError('');
-              }}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="apartment" className="block text-sm font-medium">
-            Квартира / офис
-          </label>
-          <Input
-            id="apartment"
-            value={apartment}
-            onChange={(e) => setApartment(e.target.value)}
-            placeholder="12"
-            className="mt-2"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="phone" className="block text-sm font-medium">
-            Телефон
-          </label>
-          <PhoneInput
-            id="phone"
-            value={phone}
+        <div className="rounded-xl border border-border bg-card/40 p-4 sm:p-5">
+          <label className="mb-3 block text-sm font-medium">Адрес доставки</label>
+          <AddressMapPicker
+            address={address}
+            lat={lat}
+            lng={lng}
+            autoLocate={addressesLoaded && lat == null && lng == null}
+            error={addressError}
             onChange={(value) => {
-              setPhone(value);
-              if (phoneError) setPhoneError('');
+              setAddress(value.address);
+              setLat(value.lat);
+              setLng(value.lng);
+              if (value.city) setCity(value.city);
+              if (addressError) setAddressError('');
             }}
-            required
-            className="mt-2"
-            aria-invalid={!!phoneError}
           />
-          {phoneError && (
-            <p className="mt-1 text-sm text-destructive">{phoneError}</p>
-          )}
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="apartment" className="mb-1.5 block text-sm font-medium">
+                Квартира / офис
+              </label>
+              <Input
+                id="apartment"
+                value={apartment}
+                onChange={(e) => setApartment(e.target.value)}
+                placeholder="12"
+              />
+            </div>
+            <div>
+              <label htmlFor="phone" className="mb-1.5 block text-sm font-medium">
+                Телефон
+              </label>
+              <PhoneInput
+                id="phone"
+                value={phone}
+                onChange={(value) => {
+                  setPhone(value);
+                  if (phoneError) setPhoneError('');
+                }}
+                required
+                aria-invalid={!!phoneError}
+              />
+              {phoneError && (
+                <p className="mt-1 text-sm text-destructive">{phoneError}</p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div>
