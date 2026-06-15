@@ -20,6 +20,7 @@ function sqlStr(value: string | null | undefined) {
 async function main() {
   const adminHash = await bcrypt.hash('admin123', 12);
   const userHash = await bcrypt.hash('user123', 12);
+  const friendHash = await bcrypt.hash('friend123', 12);
   const now = 'NOW()';
 
   const lines: string[] = [
@@ -43,7 +44,8 @@ async function main() {
   lines.push(
     `INSERT INTO "User" ("id", "name", "email", "password", "bonusPoints", "isAdmin", "createdAt", "updatedAt") VALUES ` +
       `('user_admin', 'Admin', 'admin@food.ru', '${esc(adminHash)}', 500, true, ${now}, ${now}), ` +
-      `('user_test', 'Test User', 'user@food.ru', '${esc(userHash)}', 150, false, ${now}, ${now}) ` +
+      `('user_test', 'Test User', 'user@food.ru', '${esc(userHash)}', 150, false, ${now}, ${now}), ` +
+      `('user_friend', 'Friend User', 'friend@food.ru', '${esc(friendHash)}', 100, false, ${now}, ${now}) ` +
       `ON CONFLICT ("email") DO UPDATE SET "password" = EXCLUDED."password", "isAdmin" = EXCLUDED."isAdmin";`,
     ''
   );

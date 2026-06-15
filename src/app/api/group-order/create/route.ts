@@ -143,6 +143,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       token: session.token,
       joinUrl: `/group-order/join/${session.token}`,
+      expiresAt: expiresAt.toISOString(),
     });
   } catch (error) {
     console.error('group-order create error:', error);

@@ -32,6 +32,7 @@ async function main() {
   console.log('✓ Admin user created (admin@food.ru / admin123)');
 
   const userPassword = await bcrypt.hash('user123', 12);
+  const friendPassword = await bcrypt.hash('friend123', 12);
   const testUser = await prisma.user.upsert({
     where: { email: 'user@food.ru' },
     update: {},
@@ -43,6 +44,18 @@ async function main() {
     },
   });
   console.log('✓ Test user created (user@food.ru / user123)');
+
+  await prisma.user.upsert({
+    where: { email: 'friend@food.ru' },
+    update: {},
+    create: {
+      name: 'Friend User',
+      email: 'friend@food.ru',
+      password: friendPassword,
+      bonusPoints: 100,
+    },
+  });
+  console.log('✓ Friend user created (friend@food.ru / friend123)');
 
   const categoryMap = await prisma.category.findMany().then((cats) =>
     Object.fromEntries(cats.map((c) => [c.slug, c.id]))

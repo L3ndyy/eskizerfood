@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
 import { useMounted } from '@/hooks/use-mounted';
 import { motion } from 'framer-motion';
 import { Heart, Plus, Minus } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { useFavoritesStore } from '@/store/favorites-store';
+import { useGroupOrderToken } from '@/hooks/use-group-order-token';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import { parseJsonResponse } from '@/lib/fetch-json';
 
 type Restaurant = Awaited<ReturnType<typeof import('@/app/actions/restaurants').getRestaurantBySlug>>;
 
@@ -20,11 +22,37 @@ interface RestaurantMenuProps {
 }
 
 export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
-  const searchParams = useSearchParams();
-  const groupToken = searchParams.get('groupToken');
+  const groupToken = useGroupOrderToken();
+  const { data: session } = useSession();
+  const [groupQty, setGroupQty] = useState<Record<string, number>>({});
+  const [groupItemIds, setGroupItemIds] = useState<Record<string, string>>({});
+  const [addingDishId, setAddingDishId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     restaurant.dishes[0]?.categoryId ?? null
   );
+
+  const syncGroupCart = useCallback(async () => {
+    if (!groupToken || !session?.user?.id) return;
+    const res = await fetch(`/api/group-order/${groupToken}`);
+    const data = await parseJsonResponse<{
+      cartItems: Array<{ id: string; dishId: string; quantity: number; userId: string }>;
+    }>(res);
+    if (!res.ok || !data?.cartItems) return;
+
+    const qty: Record<string, number> = {};
+    const ids: Record<string, string> = {};
+    for (const item of data.cartItems) {
+      if (item.userId !== session.user.id) continue;
+      qty[item.dishId] = (qty[item.dishId] ?? 0) + item.quantity;
+      ids[item.dishId] = item.id;
+    }
+    setGroupQty(qty);
+    setGroupItemIds(ids);
+  }, [groupToken, session?.user?.id]);
+
+  useEffect(() => {
+    void syncGroupCart();
+  }, [syncGroupCart]);
   const addItem = useCartStore((s) => s.addItem);
   const items = useCartStore((s) => s.items);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
@@ -61,14 +89,38 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
     }
   };
 
-  async function addGroupItem(dish: (typeof restaurant.dishes)[number]) {
+  async function changeGroupItem(
+    dish: (typeof restaurant.dishes)[number],
+    delta: 1 | -1
+  ) {
     if (!groupToken) return;
-    await fetch(`/api/group-order/${groupToken}/add-item`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dishId: dish.id, quantity: 1 }),
-    });
-    alert('Блюдо добавлено в групповую корзину');
+    setAddingDishId(dish.id);
+    try {
+      if (delta === 1) {
+        const res = await fetch(`/api/group-order/${groupToken}/add-item`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dishId: dish.id, quantity: 1 }),
+        });
+        const data = await parseJsonResponse<{ error?: string }>(res);
+        if (!res.ok) throw new Error(data?.error || 'Не удалось добавить');
+      } else {
+        const itemId = groupItemIds[dish.id];
+        if (!itemId) return;
+        const res = await fetch(`/api/group-order/${groupToken}/update-item`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itemId, delta: -1 }),
+        });
+        const data = await parseJsonResponse<{ error?: string }>(res);
+        if (!res.ok) throw new Error(data?.error || 'Не удалось изменить');
+      }
+      await syncGroupCart();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка');
+    } finally {
+      setAddingDishId(null);
+    }
   }
 
   return (
@@ -95,15 +147,22 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
       <div className="flex-1">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Меню</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => toggleRestaurantFavorite(restaurant.id)}
-          >
+          <div className="flex items-center gap-2">
+            {groupToken ? (
+              <Button variant="outline" size="sm" asChild>
+                <a href={`/group-order/join/${groupToken}`}>К групповой корзине</a>
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => toggleRestaurantFavorite(restaurant.id)}
+            >
             <Heart
               className={`h-5 w-5 ${mounted && isRestaurantFavorite ? 'fill-primary text-primary' : ''}`}
             />
           </Button>
+          </div>
         </div>
 
         {categories.map((cat) => (
@@ -115,7 +174,8 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
             <h3 className="mb-4 text-lg font-semibold">{cat.name}</h3>
             <div className="space-y-6">
               {dishesByCategory[cat.id]?.map((dish) => {
-                const qty = groupToken ? 0 : getQuantity(dish.id);
+                const qty = groupToken ? (groupQty[dish.id] ?? 0) : getQuantity(dish.id);
+                const isAdding = addingDishId === dish.id;
                 return (
                   <motion.div
                     key={dish.id}
@@ -164,13 +224,18 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
                         <span className="font-semibold text-primary">
                           {formatPrice(dish.price)}
                         </span>
-                        {qty > 0 && !groupToken ? (
+                        {qty > 0 ? (
                           <div className="flex items-center gap-2">
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => updateQuantity(dish.id, qty - 1)}
+                              disabled={isAdding}
+                              onClick={() =>
+                                groupToken
+                                  ? void changeGroupItem(dish, -1)
+                                  : updateQuantity(dish.id, qty - 1)
+                              }
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
@@ -179,7 +244,12 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
                               variant="outline"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => updateQuantity(dish.id, qty + 1)}
+                              disabled={isAdding}
+                              onClick={() =>
+                                groupToken
+                                  ? void changeGroupItem(dish, 1)
+                                  : updateQuantity(dish.id, qty + 1)
+                              }
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
@@ -187,9 +257,10 @@ export function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
                         ) : (
                           <Button
                             size="sm"
+                            disabled={isAdding}
                             onClick={() =>
                               groupToken
-                                ? addGroupItem(dish)
+                                ? void changeGroupItem(dish, 1)
                                 : addItem({
                                     dishId: dish.id,
                                     dishName: dish.name,

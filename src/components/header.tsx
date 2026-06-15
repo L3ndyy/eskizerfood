@@ -6,12 +6,16 @@ import { motion } from 'framer-motion';
 import { ShoppingCart, Heart, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { GroupOrderNavLink } from '@/components/group-order-nav-link';
+import { useGroupOrderToken } from '@/hooks/use-group-order-token';
+import { groupOrderHref, clearStoredGroupOrderToken } from '@/lib/group-order-storage';
 import { useCartStore } from '@/store/cart-store';
 import { useMounted } from '@/hooks/use-mounted';
 import { signOut } from 'next-auth/react';
 
 export function Header() {
   const { data: session, status } = useSession();
+  const groupToken = useGroupOrderToken();
   const itemCount = useCartStore((s) => s.getItemCount());
   const mounted = useMounted();
 
@@ -29,7 +33,7 @@ export function Header() {
           transition={{ delay: 0.1, duration: 0.3 }}
         >
           <Link
-            href="/"
+            href={groupOrderHref('/', groupToken)}
             className="font-display flex flex-col leading-none transition-opacity hover:opacity-90 active:scale-[0.98]"
           >
             <span className="text-xl font-semibold tracking-tight text-primary md:text-2xl">FoodExpress</span>
@@ -47,7 +51,7 @@ export function Header() {
         >
           <ThemeToggle />
           <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-            <Link href="/group-order">Групповой заказ</Link>
+            <GroupOrderNavLink />
           </Button>
           <Button variant="ghost" size="icon" asChild>
             <Link href="/favorites">
@@ -95,6 +99,7 @@ export function Header() {
                   }
                   useCartStore.getState().clearCart();
                   localStorage.removeItem('food-delivery-cart');
+                  clearStoredGroupOrderToken();
                   signOut({ callbackUrl: '/' });
                 }}
                 className="text-muted-foreground"

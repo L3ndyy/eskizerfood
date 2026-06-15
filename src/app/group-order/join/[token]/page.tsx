@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils';
 import { saveCheckoutDraft } from '@/lib/checkout-draft';
 import { parseJsonResponse } from '@/lib/fetch-json';
+import { setStoredGroupOrderToken } from '@/lib/group-order-storage';
 
 type GroupSessionData = {
   id: string;
@@ -63,7 +64,7 @@ function GroupJoinContent() {
   useEffect(() => {
     if (status !== 'authenticated') return;
     fetch(`/api/group-order/${token}/join`, { method: 'POST' }).catch(() => {});
-    sessionStorage.setItem('groupOrderToken', token);
+    setStoredGroupOrderToken(token);
   }, [status, token]);
 
   const { data, refetch, isLoading } = useQuery<GroupSessionData>({
@@ -77,6 +78,12 @@ function GroupJoinContent() {
     enabled: status === 'authenticated',
     refetchInterval: 3000,
   });
+
+  useEffect(() => {
+    if (data?.expiresAt) {
+      setStoredGroupOrderToken(token, data.expiresAt);
+    }
+  }, [data?.expiresAt, token]);
 
   const isInitiator = data?.initiator.id === session?.user?.id;
   const joinUrl = useMemo(

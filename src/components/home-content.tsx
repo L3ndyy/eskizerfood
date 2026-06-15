@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, SlidersHorizontal, Shuffle } from 'lucide-react';
+import { useGroupOrderToken } from '@/hooks/use-group-order-token';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RestaurantCard } from '@/components/restaurant-card';
@@ -16,7 +17,9 @@ const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
 export function HomeContent() {
   const searchParams = useSearchParams();
-  const groupToken = searchParams.get('groupToken');
+  const urlGroupToken = searchParams.get('groupToken');
+  const storedGroupToken = useGroupOrderToken();
+  const groupToken = urlGroupToken || storedGroupToken;
   const [restaurants, setRestaurants] = useState<RestaurantWithDishes[]>([]);
   const [banners, setBanners] = useState<Array<{ id: string; title: string; subtitle?: string | null; image: string; link?: string | null }>>([]);
   const [loading, setLoading] = useState(true);

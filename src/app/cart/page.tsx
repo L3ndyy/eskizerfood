@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 import { parseJsonResponse } from '@/lib/fetch-json';
+import { setStoredGroupOrderToken } from '@/lib/group-order-storage';
 
 export default function CartPage() {
   const router = useRouter();
@@ -57,12 +58,18 @@ export default function CartPage() {
         }),
       });
 
-      const data = await parseJsonResponse<{ joinUrl?: string; error?: string }>(res);
+      const data = await parseJsonResponse<{
+        joinUrl?: string;
+        token?: string;
+        expiresAt?: string;
+        error?: string;
+      }>(res);
       if (!res.ok || !data?.joinUrl) {
         throw new Error(data?.error || 'Не удалось создать групповой заказ');
       }
 
-      sessionStorage.setItem('groupOrderToken', data.joinUrl.split('/').pop() ?? '');
+      const token = data.token ?? data.joinUrl.split('/').pop() ?? '';
+      setStoredGroupOrderToken(token, data.expiresAt);
       clearCart();
       router.push(data.joinUrl);
     } catch (err) {
