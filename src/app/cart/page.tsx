@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { Minus, Plus, ShoppingBag, Users } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart-store';
@@ -16,7 +16,7 @@ import { setStoredGroupOrderToken } from '@/lib/group-order-storage';
 export default function CartPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { items, updateQuantity, getTotal, clearCart } = useCartStore();
+  const { items, updateQuantity, removeItem, getTotal, clearCart } = useCartStore();
   const [groupLoading, setGroupLoading] = useState(false);
 
   const restaurantNames = [...new Set(items.map((i) => i.restaurantName))];
@@ -139,27 +139,38 @@ export default function CartPage() {
                       {formatPrice(item.price)} × {item.quantity}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => updateQuantity(item.dishId, item.quantity - 1)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-6 text-center font-medium">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => updateQuantity(item.dishId, item.quantity + 1)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="text-right font-semibold">
-                    {formatPrice(item.price * item.quantity)}
+                  <div className="flex flex-col items-end justify-between gap-2 sm:flex-row sm:items-center">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => updateQuantity(item.dishId, item.quantity - 1)}
+                        aria-label="Уменьшить количество"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-6 text-center font-medium">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => updateQuantity(item.dishId, item.quantity + 1)}
+                        aria-label="Увеличить количество"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => removeItem(item.dishId)}
+                        aria-label="Удалить из корзины"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="font-semibold">{formatPrice(item.price * item.quantity)}</div>
                   </div>
                 </motion.div>
               ))}
